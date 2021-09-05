@@ -1,0 +1,127 @@
+<!doctype html>
+
+<head>
+  <meta charset='utf8'>
+  <link rel='icon' href='data:,'>
+  <title>UV</title>
+  <style>
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      cursor: grab;
+    }
+
+    img {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      display: block;
+      width: 10vmin;
+      min-width: 128px;
+      aspect-ratio: 1;
+      margin: 5vmin;
+    }
+
+    .tp-dfwv {
+      width: 80ch !important;
+    }
+
+    .tp-lblv_v {
+      flex-grow: 4 !important;
+    }
+  </style>
+  <script type='module' defer>
+
+    import * as THREE from '//cdn.skypack.dev/three@0.132?min'
+    import { OrbitControls } from '//cdn.skypack.dev/three@0.132/examples/jsm/controls/OrbitControls?min'
+    import { Pane } from '//cdn.skypack.dev/tweakpane@3.0.5?min'
+    import { Strip } from '../../build/three-strip.js'
+
+    const renderer = new THREE.WebGLRenderer();
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, 2, .1, 100);
+    const controls = new OrbitControls(camera, renderer.domElement);
+
+    scene.background = new THREE.Color('white');
+    camera.position.set(0, 2, 2);
+    controls.enableDamping = true;
+
+    const light = new THREE.DirectionalLight();
+    scene.add(light);
+
+    scene.add(new THREE.GridHelper());
+
+    // ----
+    // Strip
+    // ----
+
+    Strip.THREE = THREE;
+
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-1, 0, 0),
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(1, 0, 0),
+    ]);
+
+    const url = document.querySelector('img').src;
+    const map = new THREE.TextureLoader().load(url);
+    const strip = new Strip(curve, 10, 1, 0, Strip.UvFns[0]); 
+
+    const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, map }); 
+    const mesh = new THREE.Mesh(strip.geometry, mat);
+    scene.add(mesh);
+
+    scene.add(new Strip.Helper(strip, 1));
+
+    function updateStrip(idx) {
+      strip.uv = Strip.UvFns[idx];
+    }
+
+    // ----
+    // pane
+    // ----
+
+    const params = { 'UvFns': 0 }; // idx
+    const pane = new Pane();
+    pane.addInput(params, 'UvFns', {
+      label: 'Strip.UvFns[]',
+      options: Strip.UvFns.reduce((o, f, i) => {
+        o[f.toString()] = i;
+        return o;
+      }, {})
+    });
+    pane.on('change', () => updateStrip(params.UvFns));
+
+    // ----
+    // render
+    // ----
+
+    renderer.setAnimationLoop(() => {
+      renderer.render(scene, camera);
+      controls.update();
+    });
+
+    // ----
+    // view
+    // ----
+
+    function resize(w, h, dpr = devicePixelRatio) {
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener('resize', () => resize(innerWidth, innerHeight));
+    dispatchEvent(new Event('resize'));
+    document.body.prepend(renderer.domElement);
+
+  </script>
+</head>
+
+<body>
+  <img src='../img/a.jpg'>
+</body>

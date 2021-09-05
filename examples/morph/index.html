@@ -1,0 +1,125 @@
+<!doctype html>
+
+<head>
+  <meta charset='utf8'>
+  <link rel='icon' href='data:,'>
+  <title>Morphing</title>
+  <style>
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      cursor: grab;
+    }
+
+    .tp-dfwv {
+      width: 50ch !important;
+    }
+  </style>
+  <script type='module' defer>
+
+    import * as THREE from '//cdn.skypack.dev/three@0.132?min'
+    import { OrbitControls } from '//cdn.skypack.dev/three@0.132/examples/jsm/controls/OrbitControls?min'
+    import { Pane } from '//cdn.skypack.dev/tweakpane@3.0.5?min'
+    import { Strip } from '../../build/three-strip.js'
+
+    const renderer = new THREE.WebGLRenderer();
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, 2, .1, 100);
+    const controls = new OrbitControls(camera, renderer.domElement);
+
+    scene.background = new THREE.Color('white');
+    camera.position.set(0, 2, 2);
+    controls.enableDamping = true;
+
+    const light = new THREE.DirectionalLight();
+    scene.add(light);
+
+    scene.add(new THREE.GridHelper());
+
+    // ----
+    // Strip
+    // ----
+
+    Strip.THREE = THREE;
+
+    const curve = new THREE.CatmullRomCurve3([ // base
+      new THREE.Vector3(-1, 0, 0),
+      new THREE.Vector3(1, 0, 0),
+    ]);
+
+    const morph0 = { // ( twisted )
+      curve,
+      radius: 0.5,
+      tilt: (i, I) => i / I * Math.PI * 4
+    };
+
+    const morph1 = { // ( stretched )
+      curve: new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-4, 0, 0),
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(2, 0, 0),
+        new THREE.Vector3(2, 2, 1)
+      ]),
+      radius: 0.2,
+      tilt: 0
+    };
+
+    const strip = new Strip(curve, 200, 0.5, 0);
+    
+    const mat = new THREE.MeshLambertMaterial({ color: 'red', side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(strip.geometry, mat);
+    scene.add(mesh);
+    
+    
+    strip.setMorphs([morph0, morph1]); // set morphs
+
+    mesh.updateMorphTargets();
+
+    // ----
+    // pane
+    // ----
+
+    mesh.morphTargetInfluences[0] = 1.;
+    mesh.morphTargetInfluences[1] = 1.;
+    const params = {
+      morphTargetInfluences0: mesh.morphTargetInfluences[0],
+      morphTargetInfluences1: mesh.morphTargetInfluences[1]
+    };
+    const pane = new Pane();
+    pane.addInput(params, 'morphTargetInfluences0', { min: 0, max: 1 });
+    pane.addInput(params, 'morphTargetInfluences1', { min: 0, max: 1 });
+    pane.on('change', () => {
+      mesh.morphTargetInfluences[0] = params.morphTargetInfluences0;
+      mesh.morphTargetInfluences[1] = params.morphTargetInfluences1;
+    });
+
+    // ----
+    // render
+    // ----
+
+    renderer.setAnimationLoop((t) => {
+      renderer.render(scene, camera);
+      controls.update();
+    });
+
+    // ----
+    // view
+    // ----
+
+    function resize(w, h, dpr = devicePixelRatio) {
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener('resize', () => resize(innerWidth, innerHeight));
+    dispatchEvent(new Event('resize'));
+    document.body.prepend(renderer.domElement);
+
+  </script>
+</head>
+
+<body></body>

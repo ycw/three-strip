@@ -1,0 +1,29 @@
+{
+  "name": "three-strip",
+  "version": "0.1.0",
+  "author": "ycw (https://github.com/ycw)",
+  "repository": "github:ycw/three-strip",
+  "license": "MIT",
+  "module": "build/three-strip.js",
+  "typings": "build/three-strip.d.ts",
+  "devDependencies": {
+    "@types/three": "^0.131.0",
+    "rollup": "^2.56.3",
+    "rollup-plugin-dts": "^4.0.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript2": "^0.30.0",
+    "tslib": "^2.3.1",
+    "typescript": "^4.4.2"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c rollup.config.dev.js -w"
+  },
+  "files": [
+    "dist/*"
+  ],
+  "keywords": [
+    "threejs",
+    "geometry"
+  ]
+}

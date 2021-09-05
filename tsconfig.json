@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "ES2015",
+    "moduleResolution": "Node",
+    "target": "ESNext",
+    "strict": true,
+    "useDefineForClassFields": true,
+    
+    "outDir": "dist",
+    
+    "declaration": true,
+    "declarationDir": "typings"
+  },
+  "include": [
+    "src/*"
+  ]
+}
