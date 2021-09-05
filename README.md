@@ -4,11 +4,11 @@ Generate strip geometry for three.js. Supports taper, twist, uvgen, morph and an
 
 ## Examples
 
-- [basic usage](examples/basic)
-- [taper and twist](examples/taper-and-twist)
-- [uv](examples/uv)
-- [morph](examples/morph)
-- [animate](examples/animate)
+- [basic usage](//ycw.github.io/three-strip/examples/basic)
+- [taper and twist](//ycw.github.io/three-strip/examples/taper-and-twist)
+- [uv](//ycw.github.io/three-strip/examples/uv)
+- [morph](//ycw.github.io/three-strip/examples/morph)
+- [animate](//ycw.github.io/three-strip/examples/animate)
 
 ## Installation
 
@@ -45,7 +45,7 @@ scene.add(mesh);
 scene.add(new Strip.Helper(strip, 0.2)); // helper (axes length = 0.2)
 ```
 
-See [basic example](examples/basic).
+See [basic example](//ycw.github.io/three-strip/examples/basic).
 
 ## Docs
 
@@ -109,7 +109,7 @@ new Strip(curve, 10, 0.5, (i, I) => i / I * Math.PI)
 
 Set UV by `uv` : 
 
-( [explore](examples/uv) pre-defined uv fns )
+( [explore](//ycw.github.io/three-strip/examples/uv) pre-defined uv fns )
 
 ```js
 // use pre-defined uv fns
@@ -131,7 +131,7 @@ new Strip(curve, 10, 0.5, 0, (i, I) => [0, i/I, 1, i/I])
 
 Morphing by `setMorphs()` : 
 
-( see example - [morph](examples/morph) )
+( see example - [morph](//ycw.github.io/three-strip/examples/morph) )
 
 ```js
 const strip = new Strip( .. )
@@ -182,7 +182,7 @@ helper.dispose()
 
 Set multiple props in one go by `setProps()` :
 
-( see example - [set props in render loop](examples/animate) )
+( see example - [set props in render loop](//ycw.github.io/three-strip/examples/animate) )
 
 ```js 
 const strip = new Strip( .. )
