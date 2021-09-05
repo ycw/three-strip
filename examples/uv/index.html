@@ -71,7 +71,7 @@
     const map = new THREE.TextureLoader().load(url);
     const strip = new Strip(curve, 10, 1, 0, Strip.UvFns[0]); 
 
-    const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, map }); 
+    const mat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map }); 
     const mesh = new THREE.Mesh(strip.geometry, mat);
     scene.add(mesh);
 
