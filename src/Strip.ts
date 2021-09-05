@@ -88,7 +88,7 @@ export class Strip {
     this.#geom = null;
     this.#frms = null;
     this.#geom = new Strip.#THREE.BufferGeometry();
-    this.#update(true, true, true, true, !!this.#uv, false);
+    this.#update();
   }
 
   #setR(x: number | RadiusFn) {
@@ -110,11 +110,12 @@ export class Strip {
 
   set curve(x: Curve) {
     this.#crv = x;
-    this.#update(true, false, false, false, false, false);
+    this.#update();
   }
 
   /**
-   * Number of divisions; large the value, smoother the strip.
+   * Number of divisions; larger the value, smoother the strip.
+   * Value must be an integer greater than 0.
    */
   get segment() {
     return this.#seg;
@@ -122,11 +123,11 @@ export class Strip {
 
   set segment(x: number) {
     this.#seg = Math.max(1, x | 0); // int(x); min=1 
-    this.#update(false, true, false, false, false, false);
+    this.#update();
   }
 
   /**
-   * Radius; determine the strip breadth ( 2 * radius ).
+   * Radius; determine the strip breadth ( which is 2 * radius ).
    */
   get radius() {
     return this.#r;
@@ -135,7 +136,7 @@ export class Strip {
   set radius(x: number | RadiusFn) {
     if (x !== this.#r) {
       this.#setR(x);
-      this.#update(false, false, true, false, false, false);
+      this.#update();
     }
   }
 
@@ -149,7 +150,7 @@ export class Strip {
   set tilt(x: number | TiltFn) {
     if (x !== this.#tilt) {
       this.#setTilt(x);
-      this.#update(false, false, false, true, false, false);
+      this.#update();
     }
   }
 
@@ -174,7 +175,7 @@ export class Strip {
   set uv(x: null | UvFn) {
     if (this.#uv === x) return;
     this.#uv = x;
-    if (x) this.#update(false, false, false, false, true, false);
+    if (x) this.#update();
     else this.#geom?.deleteAttribute('uv');
   }
 
@@ -186,7 +187,14 @@ export class Strip {
   }
 
   /**
-   * Moving frames; in form of `[T,B,N]` where TBN are `Vector3`s.
+   * Moving frames; a frame is in form of `[T,B,N]` where TBN are `Vector3`s.
+   * 
+   * @example
+   * ```js
+   * strip.frames[0][0] // = 1st frame's tangent
+   * strip.frames[0][1] // = 1st frame's binormal
+   * strip.frames[0][2] // = 1st frame's normal 
+   * ```
    */
   get frames() {
     return this.#frms;
@@ -216,13 +224,8 @@ export class Strip {
   setMorphs(
     mrps: null | Morph[]
   ) {
-    if (mrps) {
-      this.#mrps = mrps;
-      this.#update(false, false, false, false, false, true);
-    } else if (this.#geom) {
-      this.#geom.morphAttributes.position = [];
-      this.#geom.morphAttributes.normal = [];
-    }
+    this.#mrps = mrps;
+    this.#update();
   }
 
   setProps(
@@ -252,7 +255,7 @@ export class Strip {
     this.#uv = uv;
 
     if (bCrv || bSeg || bR || bTilt || bUv) {
-      this.#update(bCrv, bSeg, bR, bTilt, bUv, false);
+      this.#update();
     }
   }
 
@@ -265,166 +268,139 @@ export class Strip {
     this.#frms = null;
   }
 
-  // Assumption: 
-  // This fn doesn't handle deletion of attrib uv and morph attribs
-  // those cases ( when .uv=null or .morph=null ) must be handle in
-  // setters w/o calling #update. 
-  #update(
-    bCrv: boolean,
-    bSeg: boolean,
-    bR: boolean,
-    bTilt: boolean,
-    bUv: boolean,
-    bMrp: boolean
-  ) {
+  #update() {
 
     if (!this.#geom) return;
 
     const $ = Strip.THREE!;
 
-    // ---- geometry
-    this.#geom.dispose();
-    const geom = this.#geom!;
+    const geom = this.#geom;
 
-    // ---- guards ( for skipping tasks in giant loop )
-    // | flag  | affect attribs
-    // |-      |-
-    // | bCrv  | pos, norm
-    // | bSeg  | pos, norm, uv, index (+mrp targets' pos and norm)
-    // | bR    | pos (chg radius won't affect existin' norm)
-    // | bTilt | pos, norm
-    // | bUv   | uv
-    // | bMrp  | mrp targets' pos and norm
-    const isUpdPo = bCrv || bSeg || bR || bTilt;
-    const isUpdNo = bCrv || bSeg || bTilt;
-    const isUpdUv = bUv || bSeg;
-    const isUpdIdx = bSeg;
-    const isUpdMrp = bSeg || bMrp;
+    geom.dispose(); // otherwise, will leak unbound BufferAttributes
 
-    // --- frame 
-    const frms = isUpdNo || bSeg || !this.#frms
-      ? (this.#frms = []) // new
-      : this.#frms; // reuse 
+    const aPo = new $.Float32BufferAttribute(12 * this.#seg, 3);
+    geom.setAttribute('position', aPo);
 
-    // --- attrib pos
-    (isUpdPo) && geom.setAttribute('position',
-      new $.Float32BufferAttribute(12 * this.#seg, 3)); // 4 vec3
-    const aPo = geom.getAttribute('position');
+    const aNo = new $.Float32BufferAttribute(12 * this.#seg, 3);
+    geom.setAttribute('normal', aNo);
 
-    // --- attrib normal
-    (isUpdNo) && geom.setAttribute('normal',
-      new $.Float32BufferAttribute(12 * this.#seg, 3)); // 4 vec3
-    const aNo = geom.getAttribute('normal');
+    const idxs: number[] = [];
 
-    // --- attrib uv
-    (bSeg || (isUpdUv && !geom.hasAttribute('uv'))) &&
-      geom.setAttribute('uv',
-        new $.Float32BufferAttribute(8 * this.#seg, 2)); // 4 vec2
+    if (this.#uv) {
+      geom.setAttribute('uv', new $.Float32BufferAttribute(8 * this.#seg, 2));
+    }
     const aUv = geom.getAttribute('uv');
 
-    // --- indices  
-    const idxs: number[] | null = isUpdIdx ? [] : null;
+    // get samples
 
-    // --- samples ( pts and LHand TBN )
     const pts = this.#crv.getSpacedPoints(this.#seg);
     const { tangents: Ts, binormals: Bs, normals: Ns } =
-      this.#crv.computeFrenetFrames(this.#seg);
+      this.#crv.computeFrenetFrames(this.#seg); // LHand TBN
 
-    // --- caching
+    // Rhand TBN
+
+    this.#frms ??= [];
+    this.#frms.length = this.#seg;
+    const frms = this.#frms;
+
+    // caches
+
     const $I = this.#seg;
     const $v0 = new $.Vector3();
     const $v1 = new $.Vector3();
 
-    // --- uber-loop
+    // uber-loop
+
     for (let i = 0, $i = -1, $r = NaN, $tilt = NaN; i <= $I; ++i) {
 
-      if (isUpdPo || isUpdNo) {
+      //// pos->attrib ; normal->frm[2]
 
-        $r = this.#rFn(i, $I);
-        $tilt = this.#tiltFn(i, $I);
+      $r = this.#rFn(i, $I);
+      $tilt = this.#tiltFn(i, $I);
 
-        // Rhand TBN
-        frms[i] ??= [$v0, $v0, $v0] // stubs ( pass tsc )
-        frms[i][0] = Ts[i];
-        frms[i][1] = $tilt ? Ns[i].applyAxisAngle(Ts[i], $tilt) : Ns[i];
-        frms[i][2] = $tilt ? Bs[i].applyAxisAngle(Ts[i], $tilt) : Bs[i];
-      }
+      frms[i] ??= [$v0, $v0, $v0] // stubs ( pass tsc )
+      frms[i][0] = Ts[i];
+      frms[i][1] = $tilt ? Ns[i].applyAxisAngle(Ts[i], $tilt) : Ns[i];
+      frms[i][2] = $tilt ? Bs[i].applyAxisAngle(Ts[i], $tilt) : Bs[i];
 
-      if (isUpdPo) {
-        $v0.copy(frms[i][1]).multiplyScalar($r).add(pts[i]);
-        $v1.copy(frms[i][1]).multiplyScalar(-$r).add(pts[i]);
+      $v0.copy(frms[i][1]).multiplyScalar($r).add(pts[i]);
+      $v1.copy(frms[i][1]).multiplyScalar(-$r).add(pts[i]);
 
-        (aPo.array as Float32Array).set([
-          $v0.x, $v0.y, $v0.z,
-          $v1.x, $v1.y, $v1.z
-        ], i * 6);
-      }
+      (aPo.array as Float32Array).set([
+        $v0.x, $v0.y, $v0.z,
+        $v1.x, $v1.y, $v1.z
+      ], i * 6);
 
-      if (isUpdUv) { // this incl a case: segment count chg but #uv=null 
-        if (this.#uv) { // guard #uv=null is required.
-          (aUv.array as Float32Array).set(this.#uv(i, $I), i * 4);
-        }
-      }
-
-      if (isUpdIdx && i < $I) { // upto second last sample point 
-        idxs!.push(
+      // index
+      if (i < $I) {
+        idxs.push(
           ($i = i * 2),
           $i + 1,
           $i + 2,
           $i + 2,
           $i + 1,
           $i + 3
+        )
+      }
+
+      // uv
+      if (this.#uv) {
+        (aUv.array as Float32Array).set(this.#uv(i, $I), i * 4);
+      }
+    }
+
+    // set index
+
+    geom.setIndex(idxs);
+
+    // normals
+
+    if (this.#seg === 1) {
+      $v0.addVectors(frms[0][2], frms[1][2]).divideScalar(2);
+      (aNo.array as Float32Array).set([
+        $v0.x, $v0.y, $v0.z,
+        $v0.x, $v0.y, $v0.z,
+        $v0.x, $v0.y, $v0.z,
+        $v0.x, $v0.y, $v0.z,
+      ]);
+    } else { // #seg > 1
+      for (let i = 0, I = frms.length; i < I; ++i) {
+        if (i === 0 || i === frms.length - 1) {
+          (aNo.array as Float32Array).set([
+            frms[i][2].x, frms[i][2].y, frms[i][2].z,
+            frms[i][2].x, frms[i][2].y, frms[i][2].z
+          ], i * 6);
+        } else {
+          $v0.addVectors(frms[i - 1][2], frms[i][2])
+            .add(frms[i + 1][2])
+            .divideScalar(3);
+          (aNo.array as Float32Array).set([
+            $v0.x, $v0.y, $v0.z,
+            $v0.x, $v0.y, $v0.z
+          ], i * 6);
+        }
+      }
+    }
+
+    // morph
+
+    if (this.#mrps) {
+      geom.morphAttributes.position = [];
+      geom.morphAttributes.normal = [];
+      for (const { curve, radius, tilt } of this.#mrps) {
+        const { geometry: g } = new Strip(
+          curve,
+          this.#seg,
+          radius ?? RADIUS,
+          tilt ?? TILT
         );
+        geom.morphAttributes.position.push(g!.getAttribute('position'));
+        geom.morphAttributes.normal.push(g!.getAttribute('normal'));
       }
+    } else {
+      geom.morphAttributes.position = [];
+      geom.morphAttributes.normal = [];
     }
 
-    if (isUpdIdx) {
-      geom.setIndex(idxs);
-    }
-
-    if (isUpdNo) { // avg normal ( quads based )
-      if (this.#seg > 1) {
-        for (let i = 0; i < frms.length; ++i) {
-          if (i === 0 || i === frms.length - 1) {
-            (aNo.array as Float32Array).set([
-              frms[i][2].x, frms[i][2].y, frms[i][2].z,
-              frms[i][2].x, frms[i][2].y, frms[i][2].z
-            ], i * 6);
-          } else {
-            $v0.addVectors(frms[i - 1][2], frms[i][2])
-              .add(frms[i + 1][2])
-              .divideScalar(3);
-            (aNo.array as Float32Array).set([
-              $v0.x, $v0.y, $v0.z,
-              $v0.x, $v0.y, $v0.z
-            ], i * 6);
-          }
-        }
-      }
-    }
-
-    // --- morph
-    if (isUpdMrp) {
-      if (this.#mrps) {
-        geom.morphAttributes.position = [];
-        geom.morphAttributes.normal = [];
-        for (const { curve, radius, tilt } of this.#mrps) {
-          const { geometry: g } = new Strip(
-            curve,
-            this.#seg,
-            radius ?? RADIUS,
-            tilt ?? TILT
-          );
-          geom.morphAttributes.position.push(g!.getAttribute('position'));
-          geom.morphAttributes.normal.push(g!.getAttribute('normal'));
-        }
-      }
-    }
-
-    // --- set dirty
-    if (isUpdPo) geom.attributes.position.needsUpdate = true;
-    if (isUpdNo) geom.attributes.normal.needsUpdate = true;
-    if (isUpdUv) geom.attributes.uv.needsUpdate = true;
-    if (isUpdIdx) geom.index!.needsUpdate = true;
   }
 }
