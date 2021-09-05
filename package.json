@@ -1,8 +1,9 @@
 {
   "name": "three-strip",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "ycw (https://github.com/ycw)",
   "repository": "github:ycw/three-strip",
+  "description": "Generate strip geometry for three.js",
   "license": "MIT",
   "module": "build/three-strip.js",
   "typings": "build/three-strip.d.ts",
