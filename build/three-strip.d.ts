@@ -37,9 +37,6 @@ declare class Strip {
             "__#1@#colorNeedsUpdate": boolean;
             setColors(xColor?: THREE$1.ColorRepresentation, yColor?: THREE$1.ColorRepresentation, zColor?: THREE$1.ColorRepresentation): void;
             setLength(x: number): void;
-            /**
-             * Curve(/CurvePath); determine strip flow.
-             */
             update(): void;
             type: string;
             readonly isLineSegments: true;
@@ -87,6 +84,9 @@ declare class Strip {
             applyMatrix4(matrix: THREE$1.Matrix4): void;
             applyQuaternion(quaternion: THREE$1.Quaternion): any;
             setRotationFromAxisAngle(axis: THREE$1.Vector3, angle: number): void;
+            /**
+             * Dispose geometry and delete frames.
+             */
             setRotationFromEuler(euler: THREE$1.Euler): void;
             setRotationFromMatrix(m: THREE$1.Matrix4): void;
             setRotationFromQuaternion(q: THREE$1.Quaternion): void;
@@ -159,12 +159,13 @@ declare class Strip {
     get curve(): Curve;
     set curve(x: Curve);
     /**
-     * Number of divisions; large the value, smoother the strip.
+     * Number of divisions; larger the value, smoother the strip.
+     * Value must be an integer greater than 0.
      */
     get segment(): number;
     set segment(x: number);
     /**
-     * Radius; determine the strip breadth ( 2 * radius ).
+     * Radius; determine the strip breadth ( which is 2 * radius ).
      */
     get radius(): number | RadiusFn;
     set radius(x: number | RadiusFn);
@@ -194,7 +195,14 @@ declare class Strip {
      */
     get geometry(): THREE$1.BufferGeometry | null;
     /**
-     * Moving frames; in form of `[T,B,N]` where TBN are `Vector3`s.
+     * Moving frames; a frame is in form of `[T,B,N]` where TBN are `Vector3`s.
+     *
+     * @example
+     * ```js
+     * strip.frames[0][0] // = 1st frame's tangent
+     * strip.frames[0][1] // = 1st frame's binormal
+     * strip.frames[0][2] // = 1st frame's normal
+     * ```
      */
     get frames(): Frame[] | null;
     /**
