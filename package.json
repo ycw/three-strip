@@ -1,6 +1,6 @@
 {
   "name": "three-strip",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "ycw (https://github.com/ycw)",
   "repository": "github:ycw/three-strip",
   "license": "MIT",
@@ -20,7 +20,7 @@
     "dev": "rollup -c rollup.config.dev.js -w"
   },
   "files": [
-    "dist/*"
+    "build/*"
   ],
   "keywords": [
     "threejs",
