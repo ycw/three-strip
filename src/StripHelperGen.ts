@@ -19,9 +19,6 @@ function makeClass($: typeof THREE) {
     #c1: THREE.Color;
     #c2: THREE.Color;
 
-    #nFrm: number;
-    #colorNeedsUpdate: boolean;
-
     /**
      * 
      * @param strip Strip object
@@ -38,12 +35,14 @@ function makeClass($: typeof THREE) {
       zColor: THREE.ColorRepresentation = '#0000ff',
     ) {
 
-      // --- guard
+      // guard
+
       if (!strip.geometry || !strip.frames) {
         throw new Err.GeometryHasDisposedError();
       }
 
-      // --- build
+      // build
+
       super(
         new $.BufferGeometry(),
         new $.LineBasicMaterial({ vertexColors: true })
@@ -54,8 +53,6 @@ function makeClass($: typeof THREE) {
       this.#c0 = new $.Color(xColor);
       this.#c1 = new $.Color(yColor);
       this.#c2 = new $.Color(zColor);
-      this.#nFrm = -1; // will force attrib color creation in update()
-      this.#colorNeedsUpdate = true;
 
       this.update();
     }
@@ -77,7 +74,8 @@ function makeClass($: typeof THREE) {
       yColor = new $.Color(yColor);
       zColor = new $.Color(zColor);
 
-      // --- guard
+      // guard
+
       if (
         this.#c0.equals(xColor) &&
         this.#c1.equals(yColor) &&
@@ -88,7 +86,6 @@ function makeClass($: typeof THREE) {
       this.#c1 = yColor;
       this.#c2 = zColor;
 
-      this.#colorNeedsUpdate = true;
       this.update();
     }
 
@@ -111,64 +108,64 @@ function makeClass($: typeof THREE) {
 
       this.geometry.dispose();
 
-      // --- guard
+      // guard
+
       if (!this.#strip.geometry || !this.#strip.frames) {
-        // throw new Err.GeometryHasDisposedError();
         return;
       }
 
-      // set new attrib 'color' if frame count is changed
-      if (this.#strip.frames.length !== this.#nFrm) {
-        this.geometry.setAttribute('color',
-          new $.Float32BufferAttribute(this.#strip.frames.length * 18, 3)
+      const $frms = this.#strip.frames;
+      const $I = $frms.length;
+
+      const aColor = new $.Float32BufferAttribute($I * 18, 3)
+      this.geometry.setAttribute('color', aColor);
+
+      const aPo = new $.Float32BufferAttribute($I * 18, 3);
+      this.geometry.setAttribute('position', aPo);
+
+      const $v0 = new $.Vector3();
+      const $v1 = new $.Vector3();
+      const $v2 = new $.Vector3();
+      const $v3 = new $.Vector3();
+      const $aPo = this.#strip.geometry.attributes.position;
+
+      for (let i = 0, $i = -1; i < $I; ++i) {
+
+        $v0.set(
+          $aPo.getX($i = i * 2),
+          $aPo.getY($i),
+          $aPo.getZ($i)
         );
-        this.#nFrm = this.#strip.frames.length;
-        this.#colorNeedsUpdate = true;
-      }
 
-      // attrib color
-      const aColor = this.geometry.getAttribute('color');
-
-      // sample points
-      const samples = this.#strip.curve.getSpacedPoints(this.#strip.segment);
-
-      // positions
-      const pts = [];
-
-      for (const [i, frm] of this.#strip.frames.entries()) {
-
-        // points
-        pts.push(
-          samples[i],
-          frm[1].clone().multiplyScalar(this.#len).add(samples[i]), // B (=x)
-          samples[i],
-          frm[2].clone().multiplyScalar(this.#len).add(samples[i]), // N (=y)
-          samples[i],
-          frm[0].clone().multiplyScalar(this.#len).add(samples[i]), // T (=z)
+        $v1.set(
+          $aPo.getX(++$i),
+          $aPo.getY($i),
+          $aPo.getZ($i)
         );
+
+        $v3.addVectors($v0, $v1).multiplyScalar(.5);
+
+        $v0.copy($frms[i][1]).multiplyScalar(this.#len).add($v3); // B
+        $v1.copy($frms[i][2]).multiplyScalar(this.#len).add($v3); // N
+        $v2.copy($frms[i][0]).multiplyScalar(this.#len).add($v3); // T
+
+        (aPo.array as Float32Array).set([
+          $v3.x, $v3.y, $v3.z, $v0.x, $v0.y, $v0.z, // p->B
+          $v3.x, $v3.y, $v3.z, $v1.x, $v1.y, $v1.z, // p->N
+          $v3.x, $v3.y, $v3.z, $v2.x, $v2.y, $v2.z, // p->T
+        ], i * 18);
 
         // vert colors
-        if (this.#colorNeedsUpdate) {
-          (aColor.array as Float32Array).set([
-            this.#c0.r, this.#c0.g, this.#c0.b,
-            this.#c0.r, this.#c0.g, this.#c0.b,
-            this.#c1.r, this.#c1.g, this.#c1.b,
-            this.#c1.r, this.#c1.g, this.#c1.b,
-            this.#c2.r, this.#c2.g, this.#c2.b,
-            this.#c2.r, this.#c2.g, this.#c2.b
-          ], i * 18);
-        }
+
+        (aColor.array as Float32Array).set([
+          this.#c0.r, this.#c0.g, this.#c0.b,
+          this.#c0.r, this.#c0.g, this.#c0.b,
+          this.#c1.r, this.#c1.g, this.#c1.b,
+          this.#c1.r, this.#c1.g, this.#c1.b,
+          this.#c2.r, this.#c2.g, this.#c2.b,
+          this.#c2.r, this.#c2.g, this.#c2.b
+        ], i * 18);
       }
-
-      // set attrib 'position'
-      this.geometry.setFromPoints(pts);
-
-      // set dirty attrib 'color'
-      if (this.#colorNeedsUpdate)
-        this.geometry.attributes.color.needsUpdate = true;
-
-      // reset
-      this.#colorNeedsUpdate = false;
     }
   }
 }
