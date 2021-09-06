@@ -278,16 +278,16 @@ export class Strip {
 
     geom.dispose(); // otherwise, will leak unbound BufferAttributes
 
-    const aPo = new $.Float32BufferAttribute(12 * this.#seg, 3);
+    const aPo = new $.Float32BufferAttribute(6 * (this.#seg + 1), 3);
     geom.setAttribute('position', aPo);
 
-    const aNo = new $.Float32BufferAttribute(12 * this.#seg, 3);
+    const aNo = new $.Float32BufferAttribute(6 * (this.#seg + 1), 3);
     geom.setAttribute('normal', aNo);
 
     const idxs: number[] = [];
 
     if (this.#uv) {
-      geom.setAttribute('uv', new $.Float32BufferAttribute(8 * this.#seg, 2));
+      geom.setAttribute('uv', new $.Float32BufferAttribute(4 * (this.#seg + 1), 2));
     }
     const aUv = geom.getAttribute('uv');
 
