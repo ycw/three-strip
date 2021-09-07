@@ -1,6 +1,5 @@
 import type * as THREE from 'three'
-import type { Curve, Frame } from './Ty'
-import * as Err from './Err'
+import type { Frame } from './Ty'
 
 type UFn = (i: number, I: number) => number;
 type EachFn = (i: number, I: number, f: Frame, p: THREE.Vector3) => void;
@@ -61,6 +60,7 @@ export function CrvGen($: typeof THREE) {
         $u = uFn(i, seg);
 
         // curr TBN
+
         this.getTangentAt($u, $T);
         $N.copy($N0);
         $B.copy($B0);
