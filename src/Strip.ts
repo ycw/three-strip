@@ -2,6 +2,7 @@ import type * as THREE from 'three'
 import type { Curve, RadiusFn, TiltFn, UvFn, Morph, Frame } from './Ty'
 import * as Err from './Err'
 import { StripHelperGen } from './StripHelperGen'
+import { CrvGen } from './CrvGen'
 
 // ----
 // Defaults
@@ -19,6 +20,7 @@ export class Strip {
 
   static #THREE: null | typeof THREE = null;
   static #Helper: null | ReturnType<typeof StripHelperGen>;
+  static #Crv: null | ReturnType<typeof CrvGen>;
 
   /**
    * threejs lib
@@ -26,7 +28,13 @@ export class Strip {
   static get THREE() { return Strip.#THREE }
   static set THREE(x: null | typeof THREE) {
     Strip.#THREE = x;
-    Strip.#Helper = StripHelperGen(x);
+    if (x) {
+      Strip.#Helper = StripHelperGen(x);
+      Strip.#Crv = CrvGen(x);
+    } else {
+      Strip.#Helper = null;
+      Strip.#Crv = null;
+    }
   }
 
   /**
@@ -291,12 +299,6 @@ export class Strip {
     }
     const aUv = geom.getAttribute('uv');
 
-    // get samples
-
-    const pts = this.#crv.getSpacedPoints(this.#seg);
-    const { tangents: Ts, binormals: Bs, normals: Ns } =
-      this.#crv.computeFrenetFrames(this.#seg); // LHand TBN
-
     // Rhand TBN
 
     this.#frms ??= [];
@@ -305,49 +307,52 @@ export class Strip {
 
     // caches
 
-    const $I = this.#seg;
     const $v0 = new $.Vector3();
     const $v1 = new $.Vector3();
+    let $i = -1;
+    let $r = NaN;
+    let $tilt = NaN;
 
-    // uber-loop
+    Strip.#Crv!.prototype.forEachTBN.call(
+      this.#crv,
+      this.#seg,
+      (i, I) => i / I,
+      (i, I, [T, B, N], P) => {
+        
+        // attrib position
 
-    for (let i = 0, $i = -1, $r = NaN, $tilt = NaN; i <= $I; ++i) {
+        $r = this.#rFn(i, I);
+        $tilt = this.#tiltFn(i, I);
+        frms[i] ??= [$v0, $v0, $v0] // stubs ( pass tsc )
+        frms[i][0] = T;
+        frms[i][1] = $tilt ? N.applyAxisAngle(T, $tilt) : N;
+        frms[i][2] = $tilt ? B.applyAxisAngle(T, $tilt) : B;
+        $v0.copy(frms[i][1]).multiplyScalar($r).add(P);
+        $v1.copy(frms[i][1]).multiplyScalar(-$r).add(P);
+        (aPo.array as Float32Array).set([
+          $v0.x, $v0.y, $v0.z,
+          $v1.x, $v1.y, $v1.z
+        ], i * 6);
 
-      //// pos->attrib ; normal->frm[2]
+        // index data
 
-      $r = this.#rFn(i, $I);
-      $tilt = this.#tiltFn(i, $I);
+        if (i < I) {
+          idxs.push(
+            ($i = i * 2),
+            $i + 1,
+            $i + 2,
+            $i + 2,
+            $i + 1,
+            $i + 3
+          )
+        }
 
-      frms[i] ??= [$v0, $v0, $v0] // stubs ( pass tsc )
-      frms[i][0] = Ts[i];
-      frms[i][1] = $tilt ? Ns[i].applyAxisAngle(Ts[i], $tilt) : Ns[i];
-      frms[i][2] = $tilt ? Bs[i].applyAxisAngle(Ts[i], $tilt) : Bs[i];
-
-      $v0.copy(frms[i][1]).multiplyScalar($r).add(pts[i]);
-      $v1.copy(frms[i][1]).multiplyScalar(-$r).add(pts[i]);
-
-      (aPo.array as Float32Array).set([
-        $v0.x, $v0.y, $v0.z,
-        $v1.x, $v1.y, $v1.z
-      ], i * 6);
-
-      // index
-      if (i < $I) {
-        idxs.push(
-          ($i = i * 2),
-          $i + 1,
-          $i + 2,
-          $i + 2,
-          $i + 1,
-          $i + 3
-        )
+        // uv
+        if (this.#uv) {
+          (aUv.array as Float32Array).set(this.#uv(i, I), i * 4);
+        }
       }
-
-      // uv
-      if (this.#uv) {
-        (aUv.array as Float32Array).set(this.#uv(i, $I), i * 4);
-      }
-    }
+    );
 
     // set index
 
@@ -364,14 +369,14 @@ export class Strip {
         $v0.x, $v0.y, $v0.z,
       ]);
     } else { // #seg > 1
-      for (let i = 0, I = frms.length; i < I; ++i) {
+      for (const [i, frm] of frms.entries()) {
         if (i === 0 || i === frms.length - 1) {
           (aNo.array as Float32Array).set([
-            frms[i][2].x, frms[i][2].y, frms[i][2].z,
-            frms[i][2].x, frms[i][2].y, frms[i][2].z
+            frm[2].x, frm[2].y, frm[2].z,
+            frm[2].x, frm[2].y, frm[2].z
           ], i * 6);
         } else {
-          $v0.addVectors(frms[i - 1][2], frms[i][2])
+          $v0.addVectors(frms[i - 1][2], frm[2])
             .add(frms[i + 1][2])
             .divideScalar(3);
           (aNo.array as Float32Array).set([
@@ -384,9 +389,10 @@ export class Strip {
 
     // morph
 
+    geom.morphAttributes.position = [];
+    geom.morphAttributes.normal = [];
+    
     if (this.#mrps) {
-      geom.morphAttributes.position = [];
-      geom.morphAttributes.normal = [];
       for (const { curve, radius, tilt } of this.#mrps) {
         const { geometry: g } = new Strip(
           curve,
@@ -397,9 +403,6 @@ export class Strip {
         geom.morphAttributes.position.push(g!.getAttribute('position'));
         geom.morphAttributes.normal.push(g!.getAttribute('normal'));
       }
-    } else {
-      geom.morphAttributes.position = [];
-      geom.morphAttributes.normal = [];
     }
 
   }
