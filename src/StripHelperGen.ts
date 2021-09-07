@@ -3,14 +3,7 @@ import type { Strip } from './Strip'
 import * as Err from './Err'
 
 // A fn generates a StripHelper class
-export function StripHelperGen($: null | typeof THREE) {
-  if (!$) {
-    throw new Err.DependencyInjectionError();
-  }
-  return makeClass($);
-}
-
-function makeClass($: typeof THREE) {
+export function StripHelperGen($: typeof THREE) {
   return class StripHelper extends $.LineSegments {
 
     #strip: Strip;
