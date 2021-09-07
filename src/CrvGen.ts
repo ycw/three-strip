@@ -29,10 +29,11 @@ export function CrvGen($: typeof THREE) {
       const $N = new $.Vector3();
       const $v0 = new $.Vector3();
       const $v1 = new $.Vector3();
+      let $u = uFn(0, seg);
 
       // find first tangent
 
-      this.getTangentAt(0, $T0);
+      this.getTangentAt($u, $T0);
 
       // select an initial normal vector perpendicular to the first tangent vector,
       // and in the direction of the minimum tangent xyz component
@@ -50,12 +51,12 @@ export function CrvGen($: typeof THREE) {
 
       // call
 
-      this.getPoint(0, $v1);
+      this.getPointAt($u, $v1);
       eachFn(0, seg, [$T0.clone(), $B0.clone(), $N0.clone()], $v1);
 
       // compute TBN
 
-      for (let i = 1, $u = NaN; i <= seg; i++) {
+      for (let i = 1; i <= seg; i++) {
 
         $u = uFn(i, seg);
 
