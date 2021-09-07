@@ -33,8 +33,6 @@ declare class Strip {
             "__#1@#c0": THREE$1.Color;
             "__#1@#c1": THREE$1.Color;
             "__#1@#c2": THREE$1.Color;
-            "__#1@#nFrm": number;
-            "__#1@#colorNeedsUpdate": boolean;
             setColors(xColor?: THREE$1.ColorRepresentation, yColor?: THREE$1.ColorRepresentation, zColor?: THREE$1.ColorRepresentation): void;
             setLength(x: number): void;
             update(): void;
@@ -66,7 +64,10 @@ declare class Strip {
             matrixWorld: THREE$1.Matrix4;
             matrixAutoUpdate: boolean;
             matrixWorldNeedsUpdate: boolean;
-            layers: THREE$1.Layers;
+            layers: THREE$1.Layers; /**
+             * Number of divisions; larger the value, smoother the strip.
+             * Value must be an integer greater than 0.
+             */
             visible: boolean;
             castShadow: boolean;
             receiveShadow: boolean;
@@ -84,9 +85,6 @@ declare class Strip {
             applyMatrix4(matrix: THREE$1.Matrix4): void;
             applyQuaternion(quaternion: THREE$1.Quaternion): any;
             setRotationFromAxisAngle(axis: THREE$1.Vector3, angle: number): void;
-            /**
-             * Dispose geometry and delete frames.
-             */
             setRotationFromEuler(euler: THREE$1.Euler): void;
             setRotationFromMatrix(m: THREE$1.Matrix4): void;
             setRotationFromQuaternion(q: THREE$1.Quaternion): void;
