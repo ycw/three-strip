@@ -1,6 +1,7 @@
 # About three-strip
 
-Generate strip geometry for three.js. Supports taper, twist, uvgen, morph and animation.
+Generate strip geometry for three.js. Supports taper, twist, uvgen, morph and
+animation.
 
 ## Examples
 
@@ -16,7 +17,7 @@ via cdn
 
 https://cdn.jsdelivr.net/gh/ycw/three-strip@{VERSION}/build/three-strip.js
 
-via npm
+or npm
 
 ```
 $ npm i ycw/three-strip
@@ -24,7 +25,7 @@ $ npm i ycw/three-strip#{VERSION_TAG}
 ```
 
 ## Usage
- 
+
 ```js
 import * as THREE from "path/to/three.js";
 import { Strip } from "path/to/three-strip.js";
@@ -49,142 +50,181 @@ See [basic example](//ycw.github.io/three-strip/examples/basic).
 
 ## Docs
 
-`Strip` constructor:
+Construct a `Strip` :
 
 ```js
-new Strip(
-   curve,         // determine the flow
-   segment,       // no. of divisions 
-   radius = 0.5,  // breadth
-   tilt = 0.0,    // twist
-   uv = null      // a fn to generate uv
-)
+const strip = new Strip(
+  curve, // determine strip flow
+  segment, // no. of divisions
+  radius = 0.5, // determine strip breadth ( =2*radius ); accept fn.
+  tilt = 0.0, // determine twist ( around tangnet ); accept fn.
+  uv = null, // a fn to generate uv
+);
+
+strip.geometry; // indexed buffer geometry
+strip.frames; // TBN frames
+
+strip.frames[0]; // 1st frame
+strip.frames[0][0]; // 1st frame's Tangent ( Vector3 )
+strip.frames[0][1]; // 1st frame's Binormal ( Vector3 )
+strip.frames[0][2]; // 1st frame's Normal ( Vector3 )
 ```
 
-A strip contains a geometry and TBN frames
+### Segment
+
+`segment` controls strip smoothness.
 
 ```js
-const strip = new Strip( .. )
-strip.geometry   // an indexed buffer geometry
-strip.frames     // TBN frames
-
-strip.frames[0][0] // first frame's Tangent ( Vector3 )
-strip.frames[0][1] // first frame's Binormal ( Vector3 )
-strip.frames[0][2] // first frame's Normal ( Vector3 )
+// ex. 10-segment strip
+const strip = new Strip(curve, 10);
 ```
 
+### Radius
 
-Basic usage:
-
-```js
-// make a 10-segment strip
-const strip = new Strip(curve, 10)
-```
-
-Control breadth by `radius` : 
-
-( breadth is `2 * radius` )
+`radius` controls strip breadth ( breadth = 2*radius )
 
 ```js
-// constant breadth of 1 (radius=.5)
-new Strip(curve, 10, 0.5) 
+// constant breadth of 1 (radius= .5)
+new Strip(curve, 10, 0.5);
 
-// variant breadth from 0 to 2 (radius=0 to 1) 
-new Strip(curve, nSegment, (i, I) => i / I) 
+// variant breadth from 0 to 1 (radius= 0 to .5)
+new Strip(curve, 10, (i, I) => i / I * 0.5);
 
 // i : index of sample point ( 0based )
 // I : sample point total - 1
 // i/I : in range [0..1] included
-``` 
+```
 
-Control twisting by `tilt` ( around tangent ) :
+### Tilt
+
+`tilt` controls twisting ( around tangent )
 
 ```js
-// twist whole strip by 90d 
-new Strip(curve, 10, 0.5, Math.PI / 2)
+// twist whole strip by 90d
+new Strip(curve, 10, 0.5, Math.PI / 2);
 
 // variant twisting
-new Strip(curve, 10, 0.5, (i, I) => i / I * Math.PI)
+new Strip(curve, 10, 0.5, (i, I) => i / I * Math.PI);
 ```
 
-Set UV by `uv` : 
+### Uv
 
-( [explore](//ycw.github.io/three-strip/examples/uv) pre-defined uv fns )
+`uv` is a uv gen fn.
 
 ```js
-// use pre-defined uv fns
-new Strip(curve, 10, 0.5, 0, Strip.UvFns[0])
+// fact: Each sample point has 2 handles which span across +-binormal
 
-// which is eq. to
-new Strip(curve, 10, 0.5, 0, (i, I) => [0, i/I, 1, i/I])
+// Uv fn must return arr of 4 numbers which represents
+// two uv pairs [u0,v0, u1,v1]
 
-// ---
-// Uv fn must return arr of 4 numbers, which represents 
-// two uv pairs [ u0, v0, u1, v1 ].
+// u0,v0 : texcoords of +ve handle at sample point #i
+// v1,v1 : texcoords of -ve handle at sample point #i
 
-// 1st pair(u0,v0) for the 1st handle of #i sample point
-// 2nd pair(u1,v1) for the 2nd handle of #i sample point
-
-// Each sample point has 2 handles which span across +-binormal
-// ( 1st handle refers to the one at +ve binormal )
+// ex.
+new Strip(curve, 10, .5, 0, (i, I) => [0, i / I, 1, i / I]);
 ```
 
-Morphing by `setMorphs()` : 
+Strip has 4 pre-defined uv fns hosted at `Strip.UvFns` :
 
-( see example - [morph](//ycw.github.io/three-strip/examples/morph) )
+( [browse](//ycw.github.io/three-strip/examples/uv) )
 
 ```js
-const strip = new Strip( .. )
+// ex. use pre defined uv fn
+new Strip(curve, 10, .5, 0, Strip.UvFns[0]);
+```
 
+Set `uv` to `null` if you don't need it:
+
+```js
+new Strip(curve, 10, .5, 0, /*uv*/ null); // defualt is null
+```
+
+### Morph
+
+`.setMorphs()` to set morphs:
+
+```js
 // set
 strip.setMorphs([
    { curve: .., radius: .., tilt: .. },
    { curve: .., radius: .., tilt: .. },
    ..
-])
+]);
 
 // delete
-strip.setMorphs(null)
+strip.setMorphs(null);
 ```
 
-Show TBN frames by `Strip.Helper()` :
+( see [example - morph](//ycw.github.io/three-strip/examples/morph) )
+
+### Helper
+
+Construct a helper show RHand TBN frames :
 
 ( do not honor morphing )
 
 ```js
 // basic usage:
-scene.add(new Strip.Helper(strip))
+scene.add(new Strip.Helper(strip));
 
 // optional params:
 const helper = new Strip.Helper(
-   strip, 
-   1,         // axes length
-   '#ff0000', // x-axis ( binormal )
-   '#00ff00', // y-axis ( normal )
-   '#0000ff', // z-axis ( tangent )
-)
+  strip,
+  1, // axes length
+  "#ff0000", // x-axis ( binormal )
+  "#00ff00", // y-axis ( normal )
+  "#0000ff", // z-axis ( tangent )
+);
 
 // set colors
-helper.setColors('cyan', 'magenta', 'yellow')
+helper.setColors("cyan", "magenta", "yellow");
 
 // set axes length
-helper.setLength(0.5)
+helper.setLength(0.5);
 
-// update helper if strip props changed
-strip.radius *= 2
-helper.update()
-
-// dispose 
-helper.dispose()
+// update helper if strip props ( curve, segment and tilt ) changed
+strip.tilt += Math.PI / 4;
+helper.update();
 ```
+
+## Updating Values
+
+Use setters :
+
+```js
+strip.curve = .. 
+strip.segment = ..
+strip.radius = ..
+strip.tilt = ..
+strip.uv = ..
+```
+
+Use `.setProps()` :
+
+```js
+strip.setProps( 
+   /*curve*/ ..,
+   /*segment*/ ..,
+   /*radius*/ ..,
+   /*tilt*/ ..,
+   /*uv*/ ..
+);
+
+// Pass `undefined` to imply 'keep it unchanged';
+// ex: just update radius and tilt. 
+strip.setProps(undefined, undefined, strip.radius*2, 0, undefined);
+```
+
+( `.setProps()` re-calc .geometry at most once, see Optimation ) 
 
 ## Optimization
 
 Set multiple props in one go by `setProps()` :
 
-( see example - [set props in render loop](//ycw.github.io/three-strip/examples/animate) )
+( see example -
+[set props in render loop](//ycw.github.io/three-strip/examples/animate) )
 
-```js 
+```js
 const strip = new Strip( .. )
 
 // slower ( will update .geometry twice ) 
@@ -198,22 +238,51 @@ strip.setProps(
    strip.radius * 2,
    strip.tilt + 0.01,
    /*uv*/ undefined
-) 
+)
 ```
+
+## Proper Disposal
+
+```js
+// given
+
+let strip = new Strip(curve,);
+let mesh = new THERE.Mesh(strip.geometry);
+let helper = new Strip.Helper(strip);
+scene.add(mesh);
+scene.add(helper);
+
+// then, dispose
+
+scene.remove(mesh);
+mesh = null;
+
+scene.remove(helper);
+helper.dispose(); // dispose `helper.geometry` and `helper.material`
+helper = null;
+
+strip.dispose(); // dispose `strip.geometry`; unref ALL passed object refs.
+strip = null;
+```
+
+( see [example - dispose](examples/dispose) )
+
 
 ## Build
 
 To build for different targets, config tsconfig.json :
 
+( current build is targeting "ESNext" )
+
 ```json
 {
-   "compilerOptions": {
-      "target": "ES2015" 
-   }
+  "compilerOptions": {
+    "target": "ESNext"
+  }
 }
 ```
 
-Then, run 
+Then, run
 
 ```
 $ npm run build
