@@ -57,7 +57,7 @@ export class Strip {
     (i, I) => [1 - i / I, 0, 1 - i / I, 1], // rot 270d 
   ];
 
-  #crv: Curve;
+  #crv: null | Curve;
   #seg: number;
   #r: number | RadiusFn = RADIUS;
   #tilt: number | TiltFn = TILT;
@@ -65,8 +65,9 @@ export class Strip {
   #mrps: null | Morph[];
   #geom: null | THREE.BufferGeometry;
   #frms: null | Frame[];
-  #rFn: RadiusFn = () => RADIUS;
-  #tiltFn: TiltFn = () => TILT;
+  #rFn: null | RadiusFn = () => RADIUS;
+  #tiltFn: null | TiltFn = () => TILT;
+  #disposed = false;
 
   /**
    * Generate Strip.
@@ -99,24 +100,32 @@ export class Strip {
     this.#update();
   }
 
+  /**
+   * Set #r and gen wrapper fn if needed. Pass `NaN` to kill that fn.
+   * @param x value(/fn) of radius 
+   */
   #setR(x: number | RadiusFn) {
     this.#r = x;
-    this.#rFn = typeof x == 'function' ? x : () => x;
-  }
-
-  #setTilt(x: number | TiltFn) {
-    this.#tilt = x;
-    this.#tiltFn = typeof x == 'function' ? x : () => x;
+    this.#rFn = typeof x == 'function' ? x : isNaN(x) ? null : () => x;
   }
 
   /**
-   * Curve(/CurvePath); determine strip flow.
+   * Set #tilt and gen wrapper fn if needed. Pass `NaN` to kill that fn.
+   * @param x value(/fn) of tilt
+   */
+  #setTilt(x: number | TiltFn) {
+    this.#tilt = x;
+    this.#tiltFn = (typeof x == 'function') ? x : isNaN(x) ? null : () => x;
+  }
+
+  /**
+   * A curve to determine strip flow.
    */
   get curve() {
     return this.#crv;
   }
 
-  set curve(x: Curve) {
+  set curve(x: null | Curve) {
     this.#crv = x;
     this.#update();
   }
@@ -165,16 +174,24 @@ export class Strip {
   /**
    * A fn to generate texcoords. It must return array of 4 numbers
    * representing two uv pairs `[u0,v0, u1,v1]` for +ve handle and 
-   * -ve handle at sample point #i correspondingly. 
+   * -ve handle at sample point #i correspondingly.
+   * 
+   * Each sample point has two handles which span across +-binormal.
+   * The 1st handle refers to the one at +ve binormal.
    * 
    * @example
    * ```js
-   * (i, I) => [0, i/I, 1, i/I]
+   * const uv = (i, I) => [0, i/I, 1, i/I]
+   * const strip = new Strip(curve, 10, 0.5, 0, uv);
    * ```
    * 
-   * ---
-   * Each sample point has two handles which span across +-binormal.
-   * The 1st handle refers to the one at +ve binormal.
+   * There're few predefined uv fns at `String.UvFns`.
+   * see https://ycw.github.io/three-strip/examples/uv/
+   * 
+   * @example
+   * ```js
+   * const strip = new Strip(curve, 10, 0.5, 0, Strip.UvFns[0]);
+   * ```
    */
   get uv() {
     return this.#uv;
@@ -195,13 +212,15 @@ export class Strip {
   }
 
   /**
-   * Moving frames; a frame is in form of `[T,B,N]` where TBN are `Vector3`s.
+   * Array of RHand TBN frames. 
+   * 
+   * A frame is in form of `[T,B,N]` where TBN are `Vector3`s.
    * 
    * @example
    * ```js
-   * strip.frames[0][0] // = 1st frame's tangent
-   * strip.frames[0][1] // = 1st frame's binormal
-   * strip.frames[0][2] // = 1st frame's normal 
+   * strip.frames[0][0] // 1st frame's tangent
+   * strip.frames[0][1] // 1st frame's binormal
+   * strip.frames[0][2] // 1st frame's normal 
    * ```
    */
   get frames() {
@@ -209,7 +228,9 @@ export class Strip {
   }
 
   /**
-   * Set morphing. 
+   * Set morphs.
+   * 
+   * A morph is in form `{ curve, radius, tilt }`
    * 
    * Pass `null` will delete all morph attributes from geometry.  
    * 
@@ -223,11 +244,11 @@ export class Strip {
    * // mutate arr ( strip will not auto-update )
    * arr.push({ curve: c2 }) 
    * 
-   * // pass same arr ref ( Ok. strip has 2 morphs )
+   * // pass same arr ref ( strip is updated to have 2 morphs )
    * strip.setMorphs(arr)
    * ```
    * 
-   * @param mrps Array of morph ( curve, radius and tilt )
+   * @param mrps Array of morphs
    */
   setMorphs(
     mrps: null | Morph[]
@@ -237,7 +258,7 @@ export class Strip {
   }
 
   setProps(
-    crv: Curve = this.#crv,
+    crv: null | Curve = this.#crv,
     seg: number = this.#seg,
     r: number | RadiusFn = this.#r,
     tilt: number | TiltFn = this.#tilt,
@@ -271,33 +292,70 @@ export class Strip {
    * Dispose geometry and delete frames.
    */
   dispose() {
+    if (this.#disposed) return;
+    this.#crv = null;
+    this.#seg = 1; // semantics ( min=1 )
+    this.#setR(NaN);
+    this.#setTilt(NaN);
+    this.#uv = null;
+    this.#mrps = null;
     this.#geom?.dispose();
     this.#geom = null;
     this.#frms = null;
+    this.#disposed = true;
   }
 
+  /**
+   * Check if strip has disposed ( i.e. called `.dispose()` ).
+   */
+  get isDisposed() {
+    return this.#disposed;
+  }
+
+  /**
+   * Rebuild internal geometry based on current states.
+   * 
+   * If #crv ( base curve ) is falsy, then all morph attributes will reset. 
+   */
   #update() {
 
-    if (!this.#geom) return;
+    // guard ( missing 3js or strip is disposed )
 
-    const $ = Strip.THREE!;
+    if (!Strip.THREE || this.isDisposed) return;
 
-    const geom = this.#geom;
+    // dispose old geom ( buffer attribs )
 
-    geom.dispose(); // otherwise, will leak unbound BufferAttributes
+    this.#geom!.dispose();
+
+    // cache
+
+    const $ = Strip.THREE;
+    const $g = this.#geom!;
+
+    // re alloc
 
     const aPo = new $.Float32BufferAttribute(6 * (this.#seg + 1), 3);
-    geom.setAttribute('position', aPo);
+    $g.setAttribute('position', aPo);
 
     const aNo = new $.Float32BufferAttribute(6 * (this.#seg + 1), 3);
-    geom.setAttribute('normal', aNo);
+    $g.setAttribute('normal', aNo);
 
     const idxs: number[] = [];
 
-    if (this.#uv) {
-      geom.setAttribute('uv', new $.Float32BufferAttribute(4 * (this.#seg + 1), 2));
+    if (this.#uv) $g.setAttribute('uv',
+      new $.Float32BufferAttribute(4 * (this.#seg + 1), 2));
+    const aUv = $g.getAttribute('uv');
+
+    $g.morphAttributes.position = [];
+    $g.morphAttributes.normal = [];
+
+    // guard ( missing #crv )
+
+    if (!this.#crv) {
+      this.#geom = null;
+      this.#frms = null;
+      return;
     }
-    const aUv = geom.getAttribute('uv');
 
     // Rhand TBN
 
@@ -305,7 +363,7 @@ export class Strip {
     this.#frms.length = this.#seg;
     const frms = this.#frms;
 
-    // caches
+    // cache
 
     const $v0 = new $.Vector3();
     const $v1 = new $.Vector3();
@@ -313,16 +371,18 @@ export class Strip {
     let $r = NaN;
     let $tilt = NaN;
 
+    // base curve
+
     Strip.#Crv!.prototype.forEachTBN.call(
       this.#crv,
       this.#seg,
       (i, I) => i / I,
       (i, I, [T, B, N], P) => {
-        
+
         // attrib position
 
-        $r = this.#rFn(i, I);
-        $tilt = this.#tiltFn(i, I);
+        $r = this.#rFn!(i, I);
+        $tilt = this.#tiltFn!(i, I);
         frms[i] ??= [$v0, $v0, $v0] // stubs ( pass tsc )
         frms[i][0] = T;
         frms[i][1] = $tilt ? N.applyAxisAngle(T, $tilt) : N;
@@ -336,18 +396,20 @@ export class Strip {
 
         // index data
 
+        //  2---3    ^^^^
+        //  |\  |    flow
+        //  | \ |    ^^^^
+        //  0---1    ^^^^
+
         if (i < I) {
           idxs.push(
-            ($i = i * 2),
-            $i + 1,
-            $i + 2,
-            $i + 2,
-            $i + 1,
-            $i + 3
+            ($i = i * 2), $i + 1, $i + 2, // tri (0,1,2)
+            $i + 2, $i + 1, $i + 3 // tri (2,1,3)
           )
         }
 
         // uv
+
         if (this.#uv) {
           (aUv.array as Float32Array).set(this.#uv(i, I), i * 4);
         }
@@ -356,7 +418,7 @@ export class Strip {
 
     // set index
 
-    geom.setIndex(idxs);
+    $g.setIndex(idxs);
 
     // normals
 
@@ -389,9 +451,6 @@ export class Strip {
 
     // morph
 
-    geom.morphAttributes.position = [];
-    geom.morphAttributes.normal = [];
-    
     if (this.#mrps) {
       for (const { curve, radius, tilt } of this.#mrps) {
         const { geometry: g } = new Strip(
@@ -400,8 +459,8 @@ export class Strip {
           radius ?? RADIUS,
           tilt ?? TILT
         );
-        geom.morphAttributes.position.push(g!.getAttribute('position'));
-        geom.morphAttributes.normal.push(g!.getAttribute('normal'));
+        $g.morphAttributes.position.push(g!.getAttribute('position'));
+        $g.morphAttributes.normal.push(g!.getAttribute('normal'));
       }
     }
 
