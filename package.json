@@ -1,6 +1,6 @@
 {
   "name": "three-strip",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "ycw (https://github.com/ycw)",
   "repository": "github:ycw/three-strip",
   "description": "Generate strip geometry for three.js",
