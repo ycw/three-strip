@@ -58,7 +58,7 @@
       new THREE.Vector3(1, 0, 0),
     ]);
 
-    const strip = new Strip(curve, 10000);
+    let strip = new Strip(curve, 10000);
 
     const mat = new THREE.MeshLambertMaterial({ color: 'cyan', side: THREE.DoubleSide });
     let mesh = new THREE.Mesh(strip.geometry, mat);
@@ -75,12 +75,14 @@
     btn.classList.remove('hide'); // show
     btn.addEventListener('pointerdown', () => {
       scene.remove(mesh);
-      strip.dispose();
       mesh = null;
       
       scene.remove(helper);
       helper.dispose();
       helper = null;
+      
+      strip.dispose();
+      strip = null;
 
       btn.classList.add('hide'); // hide
     }, { once: true });
