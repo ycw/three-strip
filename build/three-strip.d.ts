@@ -36,6 +36,7 @@ declare class Strip {
             setColors(xColor?: THREE$1.ColorRepresentation, yColor?: THREE$1.ColorRepresentation, zColor?: THREE$1.ColorRepresentation): void;
             setLength(x: number): void;
             update(): void;
+            dispose(): void;
             type: string;
             readonly isLineSegments: true;
             geometry: THREE$1.BufferGeometry;
@@ -64,14 +65,13 @@ declare class Strip {
             matrixWorld: THREE$1.Matrix4;
             matrixAutoUpdate: boolean;
             matrixWorldNeedsUpdate: boolean;
-            layers: THREE$1.Layers; /**
-             * Number of divisions; larger the value, smoother the strip.
-             * Value must be an integer greater than 0.
-             */
+            layers: THREE$1.Layers;
             visible: boolean;
             castShadow: boolean;
             receiveShadow: boolean;
-            frustumCulled: boolean;
+            frustumCulled: boolean; /**
+             * Radius; determine the strip breadth ( which is 2 * radius ).
+             */
             renderOrder: number;
             animations: THREE$1.AnimationClip[];
             userData: {
@@ -152,10 +152,10 @@ declare class Strip {
      */
     constructor(crv: Curve, seg: number, r?: number | RadiusFn, tilt?: number | TiltFn, uv?: null | UvFn);
     /**
-     * Curve(/CurvePath); determine strip flow.
+     * A curve to determine strip flow.
      */
-    get curve(): Curve;
-    set curve(x: Curve);
+    get curve(): null | Curve;
+    set curve(x: null | Curve);
     /**
      * Number of divisions; larger the value, smoother the strip.
      * Value must be an integer greater than 0.
@@ -177,14 +177,22 @@ declare class Strip {
      * representing two uv pairs `[u0,v0, u1,v1]` for +ve handle and
      * -ve handle at sample point #i correspondingly.
      *
-     * @example
-     * ```js
-     * (i, I) => [0, i/I, 1, i/I]
-     * ```
-     *
-     * ---
      * Each sample point has two handles which span across +-binormal.
      * The 1st handle refers to the one at +ve binormal.
+     *
+     * @example
+     * ```js
+     * const uv = (i, I) => [0, i/I, 1, i/I]
+     * const strip = new Strip(curve, 10, 0.5, 0, uv);
+     * ```
+     *
+     * There're few predefined uv fns at `String.UvFns`.
+     * see https://ycw.github.io/three-strip/examples/uv/
+     *
+     * @example
+     * ```js
+     * const strip = new Strip(curve, 10, 0.5, 0, Strip.UvFns[0]);
+     * ```
      */
     get uv(): null | UvFn;
     set uv(x: null | UvFn);
@@ -193,18 +201,22 @@ declare class Strip {
      */
     get geometry(): THREE$1.BufferGeometry | null;
     /**
-     * Moving frames; a frame is in form of `[T,B,N]` where TBN are `Vector3`s.
+     * Array of RHand TBN frames.
+     *
+     * A frame is in form of `[T,B,N]` where TBN are `Vector3`s.
      *
      * @example
      * ```js
-     * strip.frames[0][0] // = 1st frame's tangent
-     * strip.frames[0][1] // = 1st frame's binormal
-     * strip.frames[0][2] // = 1st frame's normal
+     * strip.frames[0][0] // 1st frame's tangent
+     * strip.frames[0][1] // 1st frame's binormal
+     * strip.frames[0][2] // 1st frame's normal
      * ```
      */
     get frames(): Frame[] | null;
     /**
-     * Set morphing.
+     * Set morphs.
+     *
+     * A morph is in form `{ curve, radius, tilt }`
      *
      * Pass `null` will delete all morph attributes from geometry.
      *
@@ -218,18 +230,22 @@ declare class Strip {
      * // mutate arr ( strip will not auto-update )
      * arr.push({ curve: c2 })
      *
-     * // pass same arr ref ( Ok. strip has 2 morphs )
+     * // pass same arr ref ( strip is updated to have 2 morphs )
      * strip.setMorphs(arr)
      * ```
      *
-     * @param mrps Array of morph ( curve, radius and tilt )
+     * @param mrps Array of morphs
      */
     setMorphs(mrps: null | Morph[]): void;
-    setProps(crv?: Curve, seg?: number, r?: number | RadiusFn, tilt?: number | TiltFn, uv?: null | UvFn): void;
+    setProps(crv?: null | Curve, seg?: number, r?: number | RadiusFn, tilt?: number | TiltFn, uv?: null | UvFn): void;
     /**
      * Dispose geometry and delete frames.
      */
     dispose(): void;
+    /**
+     * Check if strip has disposed ( i.e. called `.dispose()` ).
+     */
+    get isDisposed(): boolean;
 }
 
 export { Strip };
