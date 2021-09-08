@@ -10,6 +10,7 @@ animation.
 - [uv](//ycw.github.io/three-strip/examples/uv)
 - [morph](//ycw.github.io/three-strip/examples/morph)
 - [animate](//ycw.github.io/three-strip/examples/animate)
+- [dispose](//ycw.github.io/three-strip/examples/dispose)
 
 ## Installation
 
