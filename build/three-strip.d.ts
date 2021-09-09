@@ -28,15 +28,17 @@ declare class Strip {
      */
     static get Helper(): {
         new (strip: Strip, length?: number, xColor?: THREE$1.ColorRepresentation, yColor?: THREE$1.ColorRepresentation, zColor?: THREE$1.ColorRepresentation): {
-            "__#1@#strip": Strip;
+            "__#1@#strip": Strip | null;
             "__#1@#len": number;
-            "__#1@#c0": THREE$1.Color;
-            "__#1@#c1": THREE$1.Color;
-            "__#1@#c2": THREE$1.Color;
-            setColors(xColor?: THREE$1.ColorRepresentation, yColor?: THREE$1.ColorRepresentation, zColor?: THREE$1.ColorRepresentation): void;
+            "__#1@#c0": THREE$1.Color | null;
+            "__#1@#c1": THREE$1.Color | null;
+            "__#1@#c2": THREE$1.Color | null;
+            "__#1@#disposed": boolean;
+            setColors(xColor?: THREE$1.ColorRepresentation | undefined, yColor?: THREE$1.ColorRepresentation | undefined, zColor?: THREE$1.ColorRepresentation | undefined): void;
             setLength(x: number): void;
             update(): void;
             dispose(): void;
+            readonly isDisposed: boolean;
             type: string;
             readonly isLineSegments: true;
             geometry: THREE$1.BufferGeometry;
@@ -69,9 +71,7 @@ declare class Strip {
             visible: boolean;
             castShadow: boolean;
             receiveShadow: boolean;
-            frustumCulled: boolean; /**
-             * Radius; determine the strip breadth ( which is 2 * radius ).
-             */
+            frustumCulled: boolean;
             renderOrder: number;
             animations: THREE$1.AnimationClip[];
             userData: {
@@ -216,7 +216,7 @@ declare class Strip {
     /**
      * Set morphs.
      *
-     * A morph is in form `{ curve, radius, tilt }`
+     * A morph is in form of `{ curve, radius=0.5, tilt=0 }`.
      *
      * Pass `null` will delete all morph attributes from geometry.
      *
@@ -226,12 +226,8 @@ declare class Strip {
      * ```js
      * const arr = [{ curve: c1 }]
      * strip.setMorphs(arr)
-     *
-     * // mutate arr ( strip will not auto-update )
      * arr.push({ curve: c2 })
-     *
-     * // pass same arr ref ( strip is updated to have 2 morphs )
-     * strip.setMorphs(arr)
+     * strip.setMorphs(arr) // OK. strip has 2 morphs now
      * ```
      *
      * @param mrps Array of morphs
@@ -239,7 +235,7 @@ declare class Strip {
     setMorphs(mrps: null | Morph[]): void;
     setProps(crv?: null | Curve, seg?: number, r?: number | RadiusFn, tilt?: number | TiltFn, uv?: null | UvFn): void;
     /**
-     * Dispose geometry and delete frames.
+     * Dispose geometry and unref all object refs
      */
     dispose(): void;
     /**
