@@ -1,4 +1,4 @@
-import * as THREE$1 from 'three';
+import * as THREE from 'three';
 
 declare type Curve = THREE.Curve<THREE.Vector3> | THREE.CurvePath<THREE.Vector3>;
 declare type RadiusFn = (i: number, I: number) => number;
@@ -21,21 +21,21 @@ declare class Strip {
     /**
      * threejs lib
      */
-    static get THREE(): null | typeof THREE$1;
-    static set THREE(x: null | typeof THREE$1);
+    static get THREE(): null | typeof THREE;
+    static set THREE(x: null | typeof THREE);
     /**
      * A helper showing TBN frames for each sample point.
      */
     static get Helper(): {
-        new (strip: Strip, length?: number, xColor?: THREE$1.ColorRepresentation, yColor?: THREE$1.ColorRepresentation, zColor?: THREE$1.ColorRepresentation): {
+        new (strip: Strip, length?: number, xColor?: THREE.ColorRepresentation, yColor?: THREE.ColorRepresentation, zColor?: THREE.ColorRepresentation): {
             "__#1@#strip": Strip | null;
             "__#1@#len": number;
-            "__#1@#c0": THREE$1.Color | null;
-            "__#1@#c1": THREE$1.Color | null;
-            "__#1@#c2": THREE$1.Color | null;
+            "__#1@#c0": THREE.Color | null;
+            "__#1@#c1": THREE.Color | null;
+            "__#1@#c2": THREE.Color | null;
             "__#1@#disposed": boolean;
-            getColors(): null[] | THREE$1.Color[];
-            setColors(xColor?: THREE$1.ColorRepresentation | undefined, yColor?: THREE$1.ColorRepresentation | undefined, zColor?: THREE$1.ColorRepresentation | undefined): void;
+            getColors(): null[] | THREE.Color[];
+            setColors(xColor?: THREE.ColorRepresentation | undefined, yColor?: THREE.ColorRepresentation | undefined, zColor?: THREE.ColorRepresentation | undefined): void;
             getLength(): number;
             setLength(x: number): void;
             update(): void;
@@ -43,80 +43,80 @@ declare class Strip {
             readonly isDisposed: boolean;
             type: string;
             readonly isLineSegments: true;
-            geometry: THREE$1.BufferGeometry;
-            material: THREE$1.Material | THREE$1.Material[];
+            geometry: THREE.BufferGeometry;
+            material: THREE.Material | THREE.Material[];
             readonly isLine: true;
             morphTargetInfluences?: number[] | undefined;
             morphTargetDictionary?: {
                 [key: string]: number;
             } | undefined;
             computeLineDistances(): any;
-            raycast(raycaster: THREE$1.Raycaster, intersects: THREE$1.Intersection[]): void;
+            raycast(raycaster: THREE.Raycaster, intersects: THREE.Intersection[]): void;
             updateMorphTargets(): void;
             id: number;
             uuid: string;
             name: string;
-            parent: THREE$1.Object3D | null;
-            children: THREE$1.Object3D[];
-            up: THREE$1.Vector3;
-            readonly position: THREE$1.Vector3;
-            readonly rotation: THREE$1.Euler;
-            readonly quaternion: THREE$1.Quaternion;
-            readonly scale: THREE$1.Vector3;
-            readonly modelViewMatrix: THREE$1.Matrix4;
-            readonly normalMatrix: THREE$1.Matrix3;
-            matrix: THREE$1.Matrix4;
-            matrixWorld: THREE$1.Matrix4;
+            parent: THREE.Object3D | null;
+            children: THREE.Object3D[];
+            up: THREE.Vector3;
+            readonly position: THREE.Vector3;
+            readonly rotation: THREE.Euler;
+            readonly quaternion: THREE.Quaternion;
+            readonly scale: THREE.Vector3;
+            readonly modelViewMatrix: THREE.Matrix4;
+            readonly normalMatrix: THREE.Matrix3;
+            matrix: THREE.Matrix4;
+            matrixWorld: THREE.Matrix4;
             matrixAutoUpdate: boolean;
             matrixWorldNeedsUpdate: boolean;
-            layers: THREE$1.Layers;
+            layers: THREE.Layers;
             visible: boolean;
             castShadow: boolean;
             receiveShadow: boolean;
             frustumCulled: boolean;
             renderOrder: number;
-            animations: THREE$1.AnimationClip[];
+            animations: THREE.AnimationClip[];
             userData: {
                 [key: string]: any;
             };
-            customDepthMaterial: THREE$1.Material;
-            customDistanceMaterial: THREE$1.Material;
+            customDepthMaterial: THREE.Material;
+            customDistanceMaterial: THREE.Material;
             readonly isObject3D: true;
-            onBeforeRender: (renderer: THREE$1.WebGLRenderer, scene: THREE$1.Scene, camera: THREE$1.Camera, geometry: THREE$1.BufferGeometry, material: THREE$1.Material, group: THREE$1.Group) => void;
-            onAfterRender: (renderer: THREE$1.WebGLRenderer, scene: THREE$1.Scene, camera: THREE$1.Camera, geometry: THREE$1.BufferGeometry, material: THREE$1.Material, group: THREE$1.Group) => void;
-            applyMatrix4(matrix: THREE$1.Matrix4): void;
-            applyQuaternion(quaternion: THREE$1.Quaternion): any;
-            setRotationFromAxisAngle(axis: THREE$1.Vector3, angle: number): void;
-            setRotationFromEuler(euler: THREE$1.Euler): void;
-            setRotationFromMatrix(m: THREE$1.Matrix4): void;
-            setRotationFromQuaternion(q: THREE$1.Quaternion): void;
-            rotateOnAxis(axis: THREE$1.Vector3, angle: number): any;
-            rotateOnWorldAxis(axis: THREE$1.Vector3, angle: number): any;
+            onBeforeRender: (renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, geometry: THREE.BufferGeometry, material: THREE.Material, group: THREE.Group) => void;
+            onAfterRender: (renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, geometry: THREE.BufferGeometry, material: THREE.Material, group: THREE.Group) => void;
+            applyMatrix4(matrix: THREE.Matrix4): void;
+            applyQuaternion(quaternion: THREE.Quaternion): any;
+            setRotationFromAxisAngle(axis: THREE.Vector3, angle: number): void;
+            setRotationFromEuler(euler: THREE.Euler): void;
+            setRotationFromMatrix(m: THREE.Matrix4): void;
+            setRotationFromQuaternion(q: THREE.Quaternion): void;
+            rotateOnAxis(axis: THREE.Vector3, angle: number): any;
+            rotateOnWorldAxis(axis: THREE.Vector3, angle: number): any;
             rotateX(angle: number): any;
             rotateY(angle: number): any;
             rotateZ(angle: number): any;
-            translateOnAxis(axis: THREE$1.Vector3, distance: number): any;
+            translateOnAxis(axis: THREE.Vector3, distance: number): any;
             translateX(distance: number): any;
             translateY(distance: number): any;
             translateZ(distance: number): any;
-            localToWorld(vector: THREE$1.Vector3): THREE$1.Vector3;
-            worldToLocal(vector: THREE$1.Vector3): THREE$1.Vector3;
-            lookAt(vector: number | THREE$1.Vector3, y?: number | undefined, z?: number | undefined): void;
-            add(...object: THREE$1.Object3D[]): any;
-            remove(...object: THREE$1.Object3D[]): any;
+            localToWorld(vector: THREE.Vector3): THREE.Vector3;
+            worldToLocal(vector: THREE.Vector3): THREE.Vector3;
+            lookAt(vector: number | THREE.Vector3, y?: number | undefined, z?: number | undefined): void;
+            add(...object: THREE.Object3D[]): any;
+            remove(...object: THREE.Object3D[]): any;
             removeFromParent(): any;
             clear(): any;
-            attach(object: THREE$1.Object3D): any;
-            getObjectById(id: number): THREE$1.Object3D | undefined;
-            getObjectByName(name: string): THREE$1.Object3D | undefined;
-            getObjectByProperty(name: string, value: string): THREE$1.Object3D | undefined;
-            getWorldPosition(target: THREE$1.Vector3): THREE$1.Vector3;
-            getWorldQuaternion(target: THREE$1.Quaternion): THREE$1.Quaternion;
-            getWorldScale(target: THREE$1.Vector3): THREE$1.Vector3;
-            getWorldDirection(target: THREE$1.Vector3): THREE$1.Vector3;
-            traverse(callback: (object: THREE$1.Object3D) => any): void;
-            traverseVisible(callback: (object: THREE$1.Object3D) => any): void;
-            traverseAncestors(callback: (object: THREE$1.Object3D) => any): void;
+            attach(object: THREE.Object3D): any;
+            getObjectById(id: number): THREE.Object3D | undefined;
+            getObjectByName(name: string): THREE.Object3D | undefined;
+            getObjectByProperty(name: string, value: string): THREE.Object3D | undefined;
+            getWorldPosition(target: THREE.Vector3): THREE.Vector3;
+            getWorldQuaternion(target: THREE.Quaternion): THREE.Quaternion;
+            getWorldScale(target: THREE.Vector3): THREE.Vector3;
+            getWorldDirection(target: THREE.Vector3): THREE.Vector3;
+            traverse(callback: (object: THREE.Object3D) => any): void;
+            traverseVisible(callback: (object: THREE.Object3D) => any): void;
+            traverseAncestors(callback: (object: THREE.Object3D) => any): void;
             updateMatrix(): void;
             updateMatrixWorld(force?: boolean | undefined): void;
             updateWorldMatrix(updateParents: boolean, updateChildren: boolean): void;
@@ -128,15 +128,15 @@ declare class Strip {
             } | undefined): any;
             clone(recursive?: boolean | undefined): any;
             copy(source: any, recursive?: boolean | undefined): any;
-            addEventListener(type: string, listener: (event: THREE$1.Event) => void): void;
-            hasEventListener(type: string, listener: (event: THREE$1.Event) => void): boolean;
-            removeEventListener(type: string, listener: (event: THREE$1.Event) => void): void;
+            addEventListener(type: string, listener: (event: THREE.Event) => void): void;
+            hasEventListener(type: string, listener: (event: THREE.Event) => void): boolean;
+            removeEventListener(type: string, listener: (event: THREE.Event) => void): void;
             dispatchEvent(event: {
                 [attachment: string]: any;
                 type: string;
             }): void;
         };
-        DefaultUp: THREE$1.Vector3;
+        DefaultUp: THREE.Vector3;
         DefaultMatrixAutoUpdate: boolean;
     };
     /**
@@ -201,7 +201,7 @@ declare class Strip {
     /**
      * Indexed `BufferGeometry`.
      */
-    get geometry(): THREE$1.BufferGeometry | null;
+    get geometry(): THREE.BufferGeometry | null;
     /**
      * Array of RHand TBN frames.
      *
