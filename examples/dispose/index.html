@@ -59,7 +59,7 @@
     ]);
 
     let strip = new Strip(curve, 10000, 0.5, 0, Strip.UvFns[0]);
-    
+
     const mat = new THREE.MeshLambertMaterial({ color: 'cyan', side: THREE.DoubleSide });
     let mesh = new THREE.Mesh(strip.geometry, mat);
     scene.add(mesh);
@@ -80,7 +80,7 @@
 
       strip.dispose(); // dispose strip.geometry
       strip = null;
-      
+
       mat.dispose(); // dispose material
 
       scene.remove(helper);
