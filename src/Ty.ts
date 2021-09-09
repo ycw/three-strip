@@ -1,3 +1,5 @@
+import type * as THREE from 'three'
+
 export type Curve =
   | THREE.Curve<THREE.Vector3>
   | THREE.CurvePath<THREE.Vector3>;
