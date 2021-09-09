@@ -110,34 +110,39 @@ new Strip(curve, 10, 0.5, (i, I) => i / I * Math.PI);
 
 ### Uv
 
-`uv` is a uv gen fn.
+`uv` is a uv generator fn. It's required to return array of 4 numbers which
+represents two uv pairs, `[u0,v0, u1,v1]`, of two binormal-handles at given
+sample point #`i`.
 
 ```js
-// fact: Each sample point has 2 handles which span across +-binormal
-
-// Uv fn must return arr of 4 numbers which represents
-// two uv pairs [u0,v0, u1,v1]
-
-// u0,v0 : texcoords of +ve handle at sample point #i
-// v1,v1 : texcoords of -ve handle at sample point #i
-
 // ex.
+const uv = (i, I) => [0, i / I, 1, i / I];
+// i : sample point index
+// I : sample point total - 1
+```
+
+Use preset `Strip.UvFns[]` ( see
+[example - uv](//ycw.github.io/three-strip/examples/uv) ) :
+
+```js
+// ex.
+new Strip(curve, 10, .5, 0, Strip.UvFns[0]);
+// which is eq. to
 new Strip(curve, 10, .5, 0, (i, I) => [0, i / I, 1, i / I]);
 ```
 
-Use presets ( `Strip.UvFns` ) :
-
-( see [example - uv](//ycw.github.io/three-strip/examples/uv) )
+Set `null` to skip creation of attribute "uv" :
 
 ```js
-// ex. use pre defined uv fn
-new Strip(curve, 10, .5, 0, Strip.UvFns[0]);
-```
+// ex.
+new Strip(curve, 10, .5, 0, /*uv*/ null);
+// or just
+new Strip(curve, 10, .5, 0); // `uv` defaults to `null`
 
-Set `uv` to `null` if you don't need it:
-
-```js
-new Strip(curve, 10, .5, 0, /*uv*/ null); // defualt is null
+// ex.
+const strip = new Strip(curve, 10, .5, 0, Strip.UvFns[0]);
+strip.uv = null;
+strip.geometry.hasAttribute("uv"); // -> false
 ```
 
 ### Morph
