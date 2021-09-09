@@ -188,7 +188,7 @@ strip.tilt += Math.PI / 4;
 helper.update();
 ```
 
-## Updating Values
+## Setting Properties
 
 Use setters :
 
@@ -216,14 +216,13 @@ strip.setProps(
 strip.setProps(undefined, undefined, strip.radius*2, 0, undefined);
 ```
 
-( `.setProps()` re-calc .geometry at most once, see Optimation ) 
+( `.setProps()` re-calc `.geometry` at most once, see Optimization )
 
 ## Optimization
 
 Set multiple props in one go by `setProps()` :
 
-( see example -
-[set props in render loop](//ycw.github.io/three-strip/examples/animate) )
+( see example - [animate](//ycw.github.io/three-strip/examples/animate) )
 
 ```js
 const strip = new Strip( .. )
@@ -247,7 +246,7 @@ strip.setProps(
 ```js
 // given
 
-let strip = new Strip(curve,);
+let strip = new Strip(curve);
 let mesh = new THERE.Mesh(strip.geometry);
 let helper = new Strip.Helper(strip);
 scene.add(mesh);
@@ -258,16 +257,15 @@ scene.add(helper);
 scene.remove(mesh);
 mesh = null;
 
+strip.dispose(); // dispose `strip.geometry`; unref ALL passed object refs.
+strip = null;
+
 scene.remove(helper);
 helper.dispose(); // dispose `helper.geometry` and `helper.material`
 helper = null;
-
-strip.dispose(); // dispose `strip.geometry`; unref ALL passed object refs.
-strip = null;
 ```
 
 ( see [example - dispose](examples/dispose) )
-
 
 ## Build
 
