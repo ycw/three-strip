@@ -16,7 +16,7 @@ const Z_COLOR = '#0000ff';
 export function StripHelperGen($: typeof THREE) {
 
   /**
-   * Display TBNs for given strip.
+   * A helper to show Rhanded TBNs for given strip.
    */
   return class StripHelper extends $.LineSegments {
 
@@ -28,12 +28,13 @@ export function StripHelperGen($: typeof THREE) {
     #disposed = false;
 
     /**
+     * Construct a strip helper.
      * 
      * @param strip Strip object
-     * @param length The length of axes
-     * @param xColor Color of x-axis ( for binormal )
-     * @param yColor Color of y-axis ( for normal )
-     * @param zColor Color of z-axis ( for tangent )
+     * @param length Length of axes; default is 1
+     * @param xColor x-axis color ( for binormal ); default si '#ff0000'
+     * @param yColor y-axis color ( for normal ); default is '#00ff00'
+     * @param zColor z-axis color ( for tangent ); default is '#0000ff'
      */
     constructor(
       strip: Strip,
@@ -63,6 +64,25 @@ export function StripHelperGen($: typeof THREE) {
       this.#disposed = false;
 
       this.update();
+    }
+
+    /**
+    * Get colors of each axis.
+    * 
+    * @returns array of colors 
+    */
+    getColors() {
+
+      // guard ( helper is disposed ) 
+
+      if (
+        this.#disposed ||
+        !this.#c0 || !this.#c1 || !this.#c2
+      ) return [null, null, null];
+
+      // return clones
+
+      return [this.#c0.clone(), this.#c1.clone(), this.#c2.clone()];
     }
 
     /**
@@ -104,38 +124,23 @@ export function StripHelperGen($: typeof THREE) {
     }
 
     /**
-     * Get colors of each axis.
-     * @returns array of colors 
+     * Get length of axes.
+     * 
+     * @returns length of axes
      */
-    getColors() {
-
-      // guard ( helper is disposed ) 
-
-      if (
-        this.#disposed ||
-        !this.#c0 || !this.#c1 || !this.#c2
-      ) return [null, null, null];
-
-      // return clones
-
-      return [this.#c0.clone(), this.#c1.clone(), this.#c2.clone()];
+    getLength() {
+      return this.#len;
     }
 
     /** 
      * Set length of axes
-    */
+     */
     setLength(x: number) {
       if (this.#disposed) return;
       this.#len = x;
       this.update();
     }
 
-    /**
-     * Get length of axes.
-     */
-    getLength() {
-      return this.#len;
-    }
 
     /**
      * Update helper object.
