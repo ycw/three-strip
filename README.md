@@ -265,7 +265,7 @@ helper.dispose(); // dispose `helper.geometry` and `helper.material`
 helper = null;
 ```
 
-( see [example - dispose](examples/dispose) )
+( see [example - dispose](//ycw.github.io/three-strip/examples/dispose) )
 
 ## Build
 
