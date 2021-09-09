@@ -5,6 +5,7 @@
     "target": "ESNext",
     "strict": true,
     "useDefineForClassFields": true,
+    "incremental": false,
     
     "outDir": "dist",
     
