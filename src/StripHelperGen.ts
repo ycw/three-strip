@@ -12,11 +12,12 @@ export function StripHelperGen($: typeof THREE) {
    */
   return class StripHelper extends $.LineSegments {
 
-    #strip: Strip;
-    #len: number;
-    #c0: THREE.Color;
-    #c1: THREE.Color;
-    #c2: THREE.Color;
+    #strip: null | Strip = null;
+    #len: number = NaN;
+    #c0: null | THREE.Color = null;
+    #c1: null | THREE.Color = null;
+    #c2: null | THREE.Color = null;
+    #disposed = false;
 
     /**
      * 
@@ -36,7 +37,7 @@ export function StripHelperGen($: typeof THREE) {
 
       // guard
 
-      if (!strip.geometry || !strip.frames) {
+      if (strip.isDisposed) {
         throw new Err.GeometryHasDisposedError();
       }
 
@@ -52,6 +53,7 @@ export function StripHelperGen($: typeof THREE) {
       this.#c0 = new $.Color(xColor);
       this.#c1 = new $.Color(yColor);
       this.#c2 = new $.Color(zColor);
+      this.#disposed = false;
 
       this.update();
     }
@@ -65,13 +67,19 @@ export function StripHelperGen($: typeof THREE) {
      * @returns 
      */
     setColors(
-      xColor: THREE.ColorRepresentation = this.#c0,
-      yColor: THREE.ColorRepresentation = this.#c1,
-      zColor: THREE.ColorRepresentation = this.#c2,
+      xColor?: THREE.ColorRepresentation,
+      yColor?: THREE.ColorRepresentation,
+      zColor?: THREE.ColorRepresentation,
     ) {
-      xColor = new $.Color(xColor);
-      yColor = new $.Color(yColor);
-      zColor = new $.Color(zColor);
+
+      if (
+        this.#disposed ||
+        !this.#c0 || !this.#c1 || !this.#c2
+      ) return;
+
+      xColor = new $.Color(xColor ?? this.#c0);
+      yColor = new $.Color(yColor ?? this.#c1);
+      zColor = new $.Color(zColor ?? this.#c2);
 
       // guard
 
@@ -96,6 +104,7 @@ export function StripHelperGen($: typeof THREE) {
     setLength(
       x: number
     ) {
+      if (this.#disposed) return;
       this.#len = x;
       this.update();
     }
@@ -107,13 +116,20 @@ export function StripHelperGen($: typeof THREE) {
 
       this.geometry.dispose();
 
-      // guard
+      // guard ( helper has disposed )
 
-      if (!this.#strip.geometry || !this.#strip.frames) {
-        this.geometry.deleteAttribute('color');
-        this.geometry.deleteAttribute('position');
-        return;
-      }
+      if (
+        this.#disposed ||
+        !this.#strip ||
+        !this.#c0 || !this.#c1 || !this.#c2
+      ) return;
+
+      // guard ( strip has disposed )
+
+      if (
+        this.#strip.isDisposed ||
+        !this.#strip.geometry || !this.#strip.frames
+      ) return;
 
       // cache
 
@@ -181,10 +197,25 @@ export function StripHelperGen($: typeof THREE) {
      * Dispose internal geometry and material 
      */
     dispose() {
-      this.update();
+      if (this.#disposed) return;
+
+      this.#strip = null; // unref
+      this.#len = NaN;
+      this.#c0 = null;
+      this.#c1 = null;
+      this.#c2 = null;
+      this.geometry.dispose();
       Array.isArray(this.material)
         ? this.material.forEach(m => m.dispose())
         : this.material.dispose();
+      this.#disposed = true;
+    }
+
+    /**
+     * Check if this helper has disposed ( i.e. called `.dispose()` ). 
+     */
+    get isDisposed() {
+      return this.#disposed;
     }
   }
 }
