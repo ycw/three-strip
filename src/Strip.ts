@@ -101,21 +101,21 @@ export class Strip {
   }
 
   /**
-   * Set #r and gen wrapper fn if needed. Pass `NaN` to kill that fn.
+   * Set #r and gen wrapper fn if needed.
    * @param x value(/fn) of radius 
    */
   #setR(x: number | RadiusFn) {
     this.#r = x;
-    this.#rFn = typeof x == 'function' ? x : isNaN(x) ? null : () => x;
+    this.#rFn = (typeof x == 'function') ? x : () => x;
   }
 
   /**
-   * Set #tilt and gen wrapper fn if needed. Pass `NaN` to kill that fn.
+   * Set #tilt and gen wrapper fn if needed.
    * @param x value(/fn) of tilt
    */
   #setTilt(x: number | TiltFn) {
     this.#tilt = x;
-    this.#tiltFn = (typeof x == 'function') ? x : isNaN(x) ? null : () => x;
+    this.#tiltFn = (typeof x == 'function') ? x : () => x;
   }
 
   /**
@@ -139,8 +139,11 @@ export class Strip {
   }
 
   set segment(x: number) {
-    this.#seg = Math.max(1, x | 0); // int(x); min=1 
-    this.#update();
+    x = Math.max(1, x | 0); // int(x); min=1;
+    if (x !== this.#seg) {
+      this.#seg = x;
+      this.#update();
+    }
   }
 
   /**
@@ -198,10 +201,10 @@ export class Strip {
   }
 
   set uv(x: null | UvFn) {
-    if (this.#uv === x) return;
-    this.#uv = x;
-    if (x) this.#update();
-    else this.#geom?.deleteAttribute('uv');
+    if (x !== this.#uv) {
+      this.#uv = x;
+      this.#update();
+    }
   }
 
   /**
@@ -230,7 +233,7 @@ export class Strip {
   /**
    * Set morphs.
    * 
-   * A morph is in form `{ curve, radius, tilt }`
+   * A morph is in form of `{ curve, radius=0.5, tilt=0 }`.
    * 
    * Pass `null` will delete all morph attributes from geometry.  
    * 
@@ -240,12 +243,8 @@ export class Strip {
    * ```js
    * const arr = [{ curve: c1 }]
    * strip.setMorphs(arr)
-   * 
-   * // mutate arr ( strip will not auto-update )
-   * arr.push({ curve: c2 }) 
-   * 
-   * // pass same arr ref ( strip is updated to have 2 morphs )
-   * strip.setMorphs(arr)
+   * arr.push({ curve: c2 })
+   * strip.setMorphs(arr) // OK. strip has 2 morphs now
    * ```
    * 
    * @param mrps Array of morphs
@@ -264,39 +263,35 @@ export class Strip {
     tilt: number | TiltFn = this.#tilt,
     uv: null | UvFn = this.#uv
   ) {
+    if (this.#disposed) return;
 
-    const bCrv = this.#crv !== crv;
-    if (bCrv) this.#crv = crv;
+    const shouldUpd =
+      this.#crv !== crv ||
+      this.#seg !== seg ||
+      this.#r !== r ||
+      this.#tilt !== tilt ||
+      this.uv !== uv;
 
-    const bSeg = this.#seg !== seg;
-    if (bSeg) this.#seg = seg;
-
-    const bR = this.#r !== r;
-    if (bR) this.#setR(r);
-
-    const bTilt = this.#tilt !== tilt;
-    if (bTilt) this.#setTilt(tilt);
-
-    const bUv = (this.#uv !== uv) && !!uv; // uv is fn -> true
-    if (!uv) {
-      this.geometry?.deleteAttribute('uv');
-    }
+    this.#crv = crv;
+    this.#seg = seg;
+    this.#setR(r);
+    this.#setTilt(tilt);
     this.#uv = uv;
 
-    if (bCrv || bSeg || bR || bTilt || bUv) {
-      this.#update();
-    }
+    shouldUpd && this.#update();
   }
 
   /**
-   * Dispose geometry and delete frames.
+   * Dispose geometry and unref all object refs
    */
   dispose() {
     if (this.#disposed) return;
     this.#crv = null;
-    this.#seg = 1; // semantics ( min=1 )
-    this.#setR(NaN);
-    this.#setTilt(NaN);
+    this.#seg = NaN;
+    this.#r = NaN;
+    this.#rFn = null;
+    this.#tilt = NaN;
+    this.#tiltFn = null;
     this.#uv = null;
     this.#mrps = null;
     this.#geom?.dispose();
@@ -319,18 +314,25 @@ export class Strip {
    */
   #update() {
 
-    // guard ( missing 3js or strip is disposed )
+    // guard ( missing THREE )
 
-    if (!Strip.THREE || this.isDisposed) return;
+    if (!Strip.THREE) return;
 
-    // dispose old geom ( buffer attribs )
+    // guard ( strip has disposed )
 
-    this.#geom!.dispose();
+    if (
+      this.#disposed ||
+      !this.#geom
+    ) return;
+
+    // dispose old
+
+    this.#geom.dispose();
 
     // cache
 
     const $ = Strip.THREE;
-    const $g = this.#geom!;
+    const $g = this.#geom;
 
     // re alloc
 
@@ -453,12 +455,7 @@ export class Strip {
 
     if (this.#mrps) {
       for (const { curve, radius, tilt } of this.#mrps) {
-        const { geometry: g } = new Strip(
-          curve,
-          this.#seg,
-          radius ?? RADIUS,
-          tilt ?? TILT
-        );
+        const { geometry: g } = new Strip(curve, this.#seg, radius, tilt);
         $g.morphAttributes.position.push(g!.getAttribute('position'));
         $g.morphAttributes.normal.push(g!.getAttribute('normal'));
       }
