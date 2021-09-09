@@ -252,6 +252,7 @@ export class Strip {
   setMorphs(
     mrps: null | Morph[]
   ) {
+    if (this.#disposed) return;
     this.#mrps = mrps;
     this.#update();
   }
