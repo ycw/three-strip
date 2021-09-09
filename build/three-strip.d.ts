@@ -34,7 +34,9 @@ declare class Strip {
             "__#1@#c1": THREE$1.Color | null;
             "__#1@#c2": THREE$1.Color | null;
             "__#1@#disposed": boolean;
+            getColors(): null[] | THREE$1.Color[];
             setColors(xColor?: THREE$1.ColorRepresentation | undefined, yColor?: THREE$1.ColorRepresentation | undefined, zColor?: THREE$1.ColorRepresentation | undefined): void;
+            getLength(): number;
             setLength(x: number): void;
             update(): void;
             dispose(): void;
