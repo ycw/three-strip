@@ -27,11 +27,11 @@
     }
 
     .tp-dfwv {
-      width: 80ch !important;
+      width: 60ch !important;
     }
 
     .tp-lblv_v {
-      flex-grow: 4 !important;
+      flex-grow: 5 !important;
     }
   </style>
   <script type='module' defer>
@@ -50,9 +50,6 @@
     camera.position.set(0, 2, 2);
     controls.enableDamping = true;
 
-    const light = new THREE.DirectionalLight();
-    scene.add(light);
-
     scene.add(new THREE.GridHelper());
 
     // ----
@@ -66,35 +63,31 @@
       new THREE.Vector3(0, 1, 0),
       new THREE.Vector3(1, 0, 0),
     ]);
-
-    const url = document.querySelector('img').src;
-    const map = new THREE.TextureLoader().load(url);
     const strip = new Strip(curve, 10, 1, 0, Strip.UvFns[0]); 
 
-    const mat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map }); 
+    const url = document.querySelector('img').src;
+    const tex = new THREE.TextureLoader().load(url);
+    const mat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map: tex }); 
     const mesh = new THREE.Mesh(strip.geometry, mat);
     scene.add(mesh);
 
-    scene.add(new Strip.Helper(strip, 1));
-
-    function updateStrip(idx) {
-      strip.uv = Strip.UvFns[idx];
-    }
+    scene.add(new Strip.Helper(strip));
 
     // ----
     // pane
     // ----
 
-    const params = { 'UvFns': 0 }; // idx
+    const params = { 'i': 0 };
     const pane = new Pane();
-    pane.addInput(params, 'UvFns', {
-      label: 'Strip.UvFns[]',
+    pane.addInput(params, 'i', {
+      label: 'presets',
+      expanded: true,
       options: Strip.UvFns.reduce((o, f, i) => {
-        o[f.toString()] = i;
+        o[`Strip.UvFns[${i}] = ${f.toString()}`] = i;
         return o;
       }, {})
     });
-    pane.on('change', () => updateStrip(params.UvFns));
+    pane.on('change', () => strip.uv = Strip.UvFns[params.i]);
 
     // ----
     // render
