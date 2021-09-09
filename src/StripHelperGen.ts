@@ -2,6 +2,14 @@ import type * as THREE from 'three'
 import type { Strip } from './Strip'
 import * as Err from './Err'
 
+//
+// Defaults
+// 
+
+const X_COLOR = '#ff0000';
+const Y_COLOR = '#00ff00';
+const Z_COLOR = '#0000ff';
+
 /**
  * A fn to gen StripHelper class
  */
@@ -30,9 +38,9 @@ export function StripHelperGen($: typeof THREE) {
     constructor(
       strip: Strip,
       length: number = 1,
-      xColor: THREE.ColorRepresentation = '#ff0000',
-      yColor: THREE.ColorRepresentation = '#00ff00',
-      zColor: THREE.ColorRepresentation = '#0000ff',
+      xColor: THREE.ColorRepresentation = X_COLOR,
+      yColor: THREE.ColorRepresentation = Y_COLOR,
+      zColor: THREE.ColorRepresentation = Z_COLOR,
     ) {
 
       // guard
@@ -41,13 +49,12 @@ export function StripHelperGen($: typeof THREE) {
         throw new Err.GeometryHasDisposedError();
       }
 
-      // build
-
       super(
         new $.BufferGeometry(),
         new $.LineBasicMaterial({ vertexColors: true })
       );
 
+      this.type = 'StripHelper';
       this.#strip = strip;
       this.#len = length;
       this.#c0 = new $.Color(xColor);
@@ -59,7 +66,7 @@ export function StripHelperGen($: typeof THREE) {
     }
 
     /**
-     * Set axes colors.
+     * Set colors for each axis
      * 
      * @param xColor x-axis color
      * @param yColor y-axis color
@@ -97,16 +104,37 @@ export function StripHelperGen($: typeof THREE) {
     }
 
     /**
-     * Set axes length.
-     * 
-     * @param x length
+     * Get colors of each axis.
+     * @returns array of colors 
      */
-    setLength(
-      x: number
-    ) {
+    getColors() {
+
+      // guard ( helper is disposed ) 
+
+      if (
+        this.#disposed ||
+        !this.#c0 || !this.#c1 || !this.#c2
+      ) return [null, null, null];
+
+      // return clones
+
+      return [this.#c0.clone(), this.#c1.clone(), this.#c2.clone()];
+    }
+
+    /** 
+     * Set length of axes
+    */
+    setLength(x: number) {
       if (this.#disposed) return;
       this.#len = x;
       this.update();
+    }
+
+    /**
+     * Get length of axes.
+     */
+    getLength() {
+      return this.#len;
     }
 
     /**
