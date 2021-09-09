@@ -125,9 +125,9 @@ new Strip(curve, 10, 0.5, (i, I) => i / I * Math.PI);
 new Strip(curve, 10, .5, 0, (i, I) => [0, i / I, 1, i / I]);
 ```
 
-Strip has 4 pre-defined uv fns hosted at `Strip.UvFns` :
+Use presets ( `Strip.UvFns` ) :
 
-( [browse](//ycw.github.io/three-strip/examples/uv) )
+( see [example - uv](//ycw.github.io/three-strip/examples/uv) )
 
 ```js
 // ex. use pre defined uv fn
@@ -160,30 +160,41 @@ strip.setMorphs(null);
 
 ### Helper
 
-Construct a helper show RHand TBN frames :
+Construct a helper showing RHanded TBN frames :
 
-( do not honor morphing )
+( Do not honor morphing )
 
 ```js
-// basic usage:
-scene.add(new Strip.Helper(strip));
+// basic usage
+const helper = new Strip.Helper(strip);
+scene.add(helper);
 
-// optional params:
-const helper = new Strip.Helper(
-  strip,
-  1, // axes length
-  "#ff0000", // x-axis ( binormal )
-  "#00ff00", // y-axis ( normal )
-  "#0000ff", // z-axis ( tangent )
+// ctor params
+new Strip.Helper(
+  strip, // Strip instance
+  length, // length of axes; defualt is 1
+  xColor, // x-axis color ( for binormal ); default is '#ff0000'
+  yColor, // y-axis color ( for normal ); default is '#00ff00'
+  zColor, // z-axis color ( for tangent ); default is '#0000ff
 );
+
+// get colors
+const colors = helper.getColors();
+colors[0]; // x-axis color ( clone )
+colors[1]; // y-axis color ( clone )
+colors[2]; // z-axis color ( clone )
 
 // set colors
 helper.setColors("cyan", "magenta", "yellow");
 
+// get axes length
+helper.getLength();
+
 // set axes length
 helper.setLength(0.5);
 
-// update helper if strip props ( curve, segment and tilt ) changed
+// update helper if strip properties changed
+// ex.
 strip.tilt += Math.PI / 4;
 helper.update();
 ```
@@ -211,34 +222,31 @@ strip.setProps(
    /*uv*/ ..
 );
 
-// Pass `undefined` to imply 'keep it unchanged';
-// ex: just update radius and tilt. 
-strip.setProps(undefined, undefined, strip.radius*2, 0, undefined);
+// pass `undefined` to imply 'keep it unchanged'
+// ex.
+strip.setProps(undefined, 10, strip.radius * 2, 0);
 ```
-
-( `.setProps()` re-calc `.geometry` at most once, see Optimization )
 
 ## Optimization
 
-Set multiple props in one go by `setProps()` :
+Set multiple properties in one go by `.setProps()`, which computes `.geometry`
+at most once :
 
-( see example - [animate](//ycw.github.io/three-strip/examples/animate) )
+( see [example - animate](//ycw.github.io/three-strip/examples/animate) )
 
 ```js
-const strip = new Strip( .. )
+// slower ( will compute .geometry twice )
+strip.radius *= 2;
+strip.tilt += 0.01;
 
-// slower ( will update .geometry twice ) 
-strip.radius *= 2
-strip.tilt += 0.01
-
-// faster ( will update .geometry once )
+// faster ( will compute .geometry once )
 strip.setProps(
-   /*curve*/ undefined,
-   /*segment*/ undefined,
-   strip.radius * 2,
-   strip.tilt + 0.01,
-   /*uv*/ undefined
-)
+  /*curve*/ undefined,
+  /*segment*/ undefined,
+  strip.radius * 2,
+  strip.tilt + 0.01,
+  /*uv*/ undefined,
+);
 ```
 
 ## Proper Disposal
