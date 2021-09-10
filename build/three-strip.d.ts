@@ -140,11 +140,33 @@ declare class Strip {
         DefaultMatrixAutoUpdate: boolean;
     };
     /**
+     * Generate animation meta tailered for threejs animation system.
+     */
+    static get Anim(): {
+        new (strip: Strip, seg: number, dur: number): {
+            "__#3@#strip": Strip | null;
+            "__#3@#seg": number;
+            "__#3@#dur": number;
+            "__#3@#geom": THREE.BufferGeometry | null;
+            "__#3@#clip": THREE.AnimationClip | null;
+            /**
+             * Practical uv fn set.
+             */
+            "__#3@#compute"(): void;
+            readonly strip: Strip | null;
+            readonly geometry: THREE.BufferGeometry | null;
+            readonly clip: THREE.AnimationClip | null;
+            readonly segment: number;
+            readonly duration: number;
+            dispose(): void;
+        };
+    };
+    /**
      * Practical uv fn set.
      */
     static UvFns: [UvFn, UvFn, UvFn, UvFn];
     /**
-     * Generate Strip.
+     * Construct a Strip.
      *
      * @param crv A curve that determines the flow of strip
      * @param seg Number of divisions used to sample the curve
