@@ -140,7 +140,7 @@ declare class Strip {
         DefaultMatrixAutoUpdate: boolean;
     };
     /**
-     * Generate animation meta tailered for threejs animation system.
+     * Generate animation meta tailored for threejs animation system.
      */
     static get Anim(): {
         new (strip: Strip, seg: number, dur: number): {
