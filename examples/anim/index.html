@@ -1,0 +1,155 @@
+<!doctype html>
+
+<head>
+  <meta charset='utf8'>
+  <link rel='icon' href='data:,'>
+  <title>Anim</title>
+  <style>
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      cursor: grab;
+    }
+
+    .panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      padding: 1rem;
+    }
+  </style>
+  <script type='module' defer>
+
+    import * as THREE from '//cdn.skypack.dev/three@0.132?min'
+    import { OrbitControls } from '//cdn.skypack.dev/three@0.132/examples/jsm/controls/OrbitControls?min'
+    import { Curves } from '//cdn.skypack.dev/three@0.132/examples/jsm/curves/CurveExtras?min'
+    import { Pane } from '//cdn.skypack.dev/tweakpane@3.0.5?min'
+    import { Strip } from '../../build/three-strip.js'
+
+    const renderer = new THREE.WebGLRenderer();
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, 2, .1, 100);
+    const controls = new OrbitControls(camera, renderer.domElement);
+
+    scene.background = new THREE.Color('white');
+    camera.position.set(0, 2, 2);
+    controls.enableDamping = true;
+
+    const light = new THREE.DirectionalLight();
+    scene.add(light);
+
+    scene.add(new THREE.GridHelper());
+
+    // ----
+    // Strip
+    // ----
+
+    Strip.THREE = THREE;
+
+    const curve = new Curves.GrannyKnot();
+    const tilt = (i, I) => i / I * Math.PI / 180 * -210 + Math.PI;
+    const strip = new Strip(curve, 500, 4, tilt, Strip.UvFns[0]);
+    const anim = new Strip.Anim(strip, 20, 10);
+
+    const group = new THREE.Group();
+    group.scale.setScalar(0.1);
+    scene.add(group);
+
+    { // track ( for debug )
+      const mat = new THREE.MeshLambertMaterial({ 
+        color: '#000', transparent: true, opacity: 0.1, wireframe: true });
+      const mesh = new THREE.Mesh(strip.geometry, mat);
+      group.add(mesh);
+    }
+
+    // strip 
+
+    const tex = new THREE.TextureLoader().load('../img/a.jpg');
+    const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, map: tex })
+    const mesh = new THREE.Mesh(anim.geometry, mat);
+    group.add(mesh);
+
+    // animation
+
+    const mixer = new THREE.AnimationMixer(mesh);
+    const action = mixer.clipAction(anim.clip);
+    action.play();
+
+    // tweak pane
+    
+    const params = { duration: anim.duration };
+    const pane = new Pane();
+    pane.addInput(params, 'duration', { min: 1, max: 60 });
+    pane.on('change', () => action.setDuration(params.duration));
+
+    // raycaster
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    document.addEventListener('pointermove', (e) => {
+      pointer.x = e.clientX / innerWidth * 2 - 1;
+      pointer.y = 1 - e.clientY / innerHeight * 2;
+    });
+
+    // ----
+    // render
+    // ----
+
+    const clock = new THREE.Clock();
+    const intersects = [];
+    const el = document.querySelector('output');
+    let isHitAndThenMovedAway = false; 
+
+    renderer.setAnimationLoop(() => {
+      renderer.render(scene, camera);
+      controls.update();
+
+      // update mixer
+
+      mixer.update(clock.getDelta());
+
+      // inspect intersections
+
+      raycaster.setFromCamera(pointer, camera);
+      intersects.length = 0;
+      raycaster.intersectObject(mesh, false, intersects);
+
+      const isHit = intersects[0]?.object === mesh;
+      el.textContent = isHit;
+      action.paused = isHit;
+      if (isHit) {
+        if (isHitAndThenMovedAway) {
+          action.timeScale *= -1; // flip
+          isHitAndThenMovedAway = false;
+        }
+      } else {
+        isHitAndThenMovedAway = true;
+      }
+    });
+
+    // ----
+    // view
+    // ----
+
+    function resize(w, h, dpr = devicePixelRatio) {
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener('resize', () => resize(innerWidth, innerHeight));
+    dispatchEvent(new Event('resize'));
+    document.body.prepend(renderer.domElement);
+
+  </script>
+</head>
+
+<body>
+  <div class='panel'>
+    Is pointer hit strip ? <output></output>
+  </div>
+</body>
