@@ -203,6 +203,46 @@ strip.tilt += Math.PI / 4;
 helper.update();
 ```
 
+
+### Anim
+
+Use `Strip.Anim` to generate animation meta tailered for [threejs animation system](https://threejs.org/docs/#manual/en/introduction/Animation-system). ( see [example - anim](//ycw.github.io/three-strip/examples/anim) )
+
+Constructor :
+
+```js
+new Strip.Anim(
+  strip, // rail strip
+  seg, // no. of segments for moving strip
+  dur // animation duration in sec.
+);
+
+// `seg` will be clamped within 1 <= seg <= strip.segment
+```
+
+Ex. pingpong animation
+
+```js
+const anim = new Strip.Anim(strip, 50, 60);
+const mesh = new THREE.Mesh(anim.geometry);
+const mixer = new THREE.AnimationMixer(mesh);
+const action = mixer.clipAction(anim.clip);
+action.setLoop(THREE.LoopPingPong, 2).play();
+// remember to update `mixer` in render loop.
+```
+
+Properties :
+
+```js
+anim.strip; // the passed 'rail' strip
+anim.segment; // no. of segment for moving strip
+anim.duration; // animation duration in sec.
+anim.geometry; // a BufferGeometry used to make a Mesh
+anim.clip; // a AnimationClip used by AnimationAction
+
+// They're all getters.
+```
+
 ## Setting Properties
 
 Use setters :
@@ -251,43 +291,6 @@ strip.setProps(
 ```
 
 
-## Anim
-
-Use `Strip.Anim` to generate animation meta tailered for [threejs animation system](https://threejs.org/docs/#manual/en/introduction/Animation-system). ( see [example - anim](//ycw.github.io/three-strip/examples/anim) )
-
-Constructor :
-
-```js
-new Strip.Anim(
-  strip, // rail strip
-  seg, // no. of segments for moving strip
-  dur // animation duration in sec.
-);
-// `seg` will be clamped within 1 <= seg <= strip.segment
-```
-
-Ex. pingpong animation
-
-```js
-const anim = new Strip.Anim(strip, 50, 60);
-const mesh = new THREE.Mesh(anim.geometry);
-const mixer = new THREE.AnimationMixer(mesh);
-const action = mixer.clipAction(anim.clip);
-action.setLoop(THREE.LoopPingPong, 2).play();
-// remember to update `mixer` in render loop.
-```
-
-Properties :
-
-```js
-anim.strip; // the passed 'rail' strip
-anim.segment; // no. of segment for moving strip
-anim.duration; // animation duration in sec.
-anim.geometry; // a BufferGeometry used to make a Mesh
-anim.clip; // a AnimationClip used by AnimationAction
-
-// They're all getters.
-```
 
 ## Proper Disposal
 
