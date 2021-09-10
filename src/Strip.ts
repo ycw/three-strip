@@ -44,7 +44,7 @@ export class Strip {
   }
 
   /**
-   * Generate animation meta tailered for threejs animation system.
+   * Generate animation meta tailored for threejs animation system.
    */
   static get Anim() {
     if (!this.#Anim) {

@@ -206,7 +206,7 @@ helper.update();
 
 ### Anim
 
-Use `Strip.Anim` to generate animation meta tailered for [threejs animation system](https://threejs.org/docs/#manual/en/introduction/Animation-system). ( see [example - anim](//ycw.github.io/three-strip/examples/anim) )
+Use `Strip.Anim` to generate animation meta tailored for [threejs animation system](https://threejs.org/docs/#manual/en/introduction/Animation-system). ( see [example - anim](//ycw.github.io/three-strip/examples/anim) )
 
 Constructor :
 
