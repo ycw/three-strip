@@ -9,8 +9,7 @@ animation.
 - [taper and twist](//ycw.github.io/three-strip/examples/taper-and-twist)
 - [uv](//ycw.github.io/three-strip/examples/uv)
 - [morph](//ycw.github.io/three-strip/examples/morph)
-- [animate](//ycw.github.io/three-strip/examples/animate)
-- [dispose](//ycw.github.io/three-strip/examples/dispose)
+- [anim](//ycw.github.io/three-strip/examples/anim)
 
 ## Installation
 
@@ -232,12 +231,9 @@ strip.setProps(
 strip.setProps(undefined, 10, strip.radius * 2, 0);
 ```
 
-## Optimization
+`.setProps()` computes `.geometry` at most once :
 
-Set multiple properties in one go by `.setProps()`, which computes `.geometry`
-at most once :
-
-( see [example - animate](//ycw.github.io/three-strip/examples/animate) )
+( see [example - set props](//ycw.github.io/three-strip/examples/set-props) )
 
 ```js
 // slower ( will compute .geometry twice )
@@ -254,30 +250,57 @@ strip.setProps(
 );
 ```
 
+
+## Anim
+
+Use `Strip.Anim` to generate animation meta tailered for [threejs animation system](https://threejs.org/docs/#manual/en/introduction/Animation-system). ( see [example - anim](//ycw.github.io/three-strip/examples/anim) )
+
+Constructor :
+
+```js
+new Strip.Anim(
+  strip, // rail strip
+  seg, // no. of segments for moving strip
+  dur // animation duration in sec.
+);
+// `seg` will be clamped within 1 <= seg <= strip.segment
+```
+
+Ex. pingpong animation
+
+```js
+const anim = new Strip.Anim(strip, 50, 60);
+const mesh = new THREE.Mesh(anim.geometry);
+const mixer = new THREE.AnimationMixer(mesh);
+const action = mixer.clipAction(anim.clip);
+action.setLoop(THREE.LoopPingPong, 2).play();
+// remember to update `mixer` in render loop.
+```
+
+Properties :
+
+```js
+anim.strip; // the passed 'rail' strip
+anim.segment; // no. of segment for moving strip
+anim.duration; // animation duration in sec.
+anim.geometry; // a BufferGeometry used to make a Mesh
+anim.clip; // a AnimationClip used by AnimationAction
+
+// They're all getters.
+```
+
 ## Proper Disposal
 
 ```js
-// given
+strip.dispose() // dispose a Strip{}
+helper.dispose() // dispose a Helper{}
+anim.dispose() // dispose a Anim{}
 
-let strip = new Strip(curve);
-let mesh = new THERE.Mesh(strip.geometry);
-let helper = new Strip.Helper(strip);
-scene.add(mesh);
-scene.add(helper);
-
-// then, dispose
-
-scene.remove(mesh);
-mesh = null;
-
-strip.dispose(); // dispose `strip.geometry`; unref ALL passed object refs.
-strip = null;
-
-scene.remove(helper);
-helper.dispose(); // dispose `helper.geometry` and `helper.material`
-helper = null;
-```
-
+// Disposing a helper(/anim) will unref `.strip` only.
+helper.dispose();
+helper.strip // -> null
+strip.isDisposed  // -> false
+````
 ( see [example - dispose](//ycw.github.io/three-strip/examples/dispose) )
 
 ## Build
