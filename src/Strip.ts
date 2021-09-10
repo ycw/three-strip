@@ -3,24 +3,18 @@ import type { Curve, RadiusFn, TiltFn, UvFn, Morph, Frame } from './Ty'
 import * as Err from './Err'
 import { StripHelperGen } from './StripHelperGen'
 import { CrvGen } from './CrvGen'
-
-// ----
-// Defaults
-// ----
+import { AnimGen } from './AnimGen'
 
 const RADIUS = 0.5;
 const TILT = 0;
 const UV = null;
-
-// ----
-// Strip
-// ----
 
 export class Strip {
 
   static #THREE: null | typeof THREE = null;
   static #Helper: null | ReturnType<typeof StripHelperGen>;
   static #Crv: null | ReturnType<typeof CrvGen>;
+  static #Anim: null | ReturnType<typeof AnimGen>;
 
   /**
    * threejs lib
@@ -31,9 +25,11 @@ export class Strip {
     if (x) {
       Strip.#Helper = StripHelperGen(x);
       Strip.#Crv = CrvGen(x);
+      Strip.#Anim = AnimGen(x);
     } else {
       Strip.#Helper = null;
       Strip.#Crv = null;
+      Strip.#Anim = null;
     }
   }
 
@@ -48,11 +44,21 @@ export class Strip {
   }
 
   /**
+   * Generate animation meta tailered for threejs animation system.
+   */
+  static get Anim() {
+    if (!this.#Anim) {
+      throw new Err.DependencyInjectionError();
+    }
+    return this.#Anim;
+  }
+
+  /**
    * Practical uv fn set.
    */
   static UvFns: [UvFn, UvFn, UvFn, UvFn] = [
-    (i, I) => [0, i / I, 1, i / I], // uv frame = (-Binormal, Tangent)
-    (i, I) => [i / I, 1, i / I, 0], // rot 90d 
+    (i, I) => [0, i / I, 1, i / I],
+    (i, I) => [i / I, 1, i / I, 0], // rot 90d ( around normal )
     (i, I) => [1, 1 - i / I, 0, 1 - i / I], // rot 180d
     (i, I) => [1 - i / I, 0, 1 - i / I, 1], // rot 270d 
   ];
@@ -70,7 +76,7 @@ export class Strip {
   #disposed = false;
 
   /**
-   * Generate Strip.
+   * Construct a Strip.
    * 
    * @param crv A curve that determines the flow of strip
    * @param seg Number of divisions used to sample the curve
@@ -461,6 +467,5 @@ export class Strip {
         $g.morphAttributes.normal.push(g!.getAttribute('normal'));
       }
     }
-
   }
 }
