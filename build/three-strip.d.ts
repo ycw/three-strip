@@ -38,7 +38,6 @@ interface StripHelper extends THREE.LineSegments {
      * @param xColor x-axis color
      * @param yColor y-axis color
      * @param zColor z-axis color
-     * @returns
      */
     setColors(xColor?: THREE.ColorRepresentation, yColor?: THREE.ColorRepresentation, zColor?: THREE.ColorRepresentation): void;
     /**
