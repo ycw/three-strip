@@ -16,6 +16,85 @@ declare type Frame = [
     THREE.Vector3
 ];
 
+interface StripHelperClass {
+    /**
+     * Construct a strip helper which shows right-handed TBN frames of strip.
+     * @param strip Strip object
+     * @param length Length of axes; default is `1`
+     * @param xColor x-axis color ( for binormal ); default is `'#ff0000'`
+     * @param yColor y-axis color ( for normal ); default is `'#00ff00'`
+     * @param zColor z-axis color ( for tangent ); default is `'#0000ff'`
+     */
+    new (strip: Strip, length?: number, xColor?: THREE.ColorRepresentation, yColor?: THREE.ColorRepresentation, zColor?: THREE.ColorRepresentation): StripHelper;
+}
+interface StripHelper extends THREE.LineSegments {
+    /**
+     * Get colors of each axis.
+     * @returns array of colors ( clone )
+     */
+    getColors(): (null | THREE.Color)[];
+    /**
+     * Set colors for each axis
+     * @param xColor x-axis color
+     * @param yColor y-axis color
+     * @param zColor z-axis color
+     * @returns
+     */
+    setColors(xColor?: THREE.ColorRepresentation, yColor?: THREE.ColorRepresentation, zColor?: THREE.ColorRepresentation): void;
+    /**
+     * Get length of axes.
+     * @returns length of axes
+     */
+    getLength(): number;
+    /** Set length of axes */
+    setLength(x: number): void;
+    /** Update internal geometry to sync with strip. */
+    update(): void;
+    /** Dispose internal geometry and material; unref all object refs. */
+    dispose(): void;
+    /** Check if helper is disposed. */
+    get isDisposed(): boolean;
+}
+
+interface AnimClass {
+    /**
+     * Contruct animation meta.
+     *
+     * @example
+     * ```js
+     * const anim = new Strip.Anim(strip, 10, 1);
+     * const mesh = new THREE.Mesh(anim.geometry);
+     * const mixer = new THREE.AnimationMixer(mesh);
+     * const action = mixer.clipAction(anim.clip);
+     * action.setDuration(7).play();
+     * // Don't forget to update mixer in render loop.
+     * ```
+     *
+     * @param strip A strip instance acts as a 'rail'.
+     * @param seg Segment count of moveing strip.
+     * @param dur Animation duration in sec.
+     */
+    new (strip: Strip, seg: number, dur: number): Anim;
+}
+interface Anim {
+    /** The passed strip which is used as a 'rail' */
+    get strip(): null | Strip;
+    /**
+     * Segment count of moving strip; clamped.
+     */
+    get segment(): number;
+    /** Animation duration */
+    get duration(): number;
+    /** A non-indexed geometry */
+    get geometry(): null | THREE.BufferGeometry;
+    /** A AnimationClip */
+    get clip(): null | THREE.AnimationClip;
+    /** Dispose geometry; unref all object refs */
+    dispose(): void;
+    /** Check if anim is disposed */
+    get isDispose(): boolean;
+}
+
 declare class Strip {
     #private;
     /**
@@ -26,141 +105,11 @@ declare class Strip {
     /**
      * A helper showing TBN frames for each sample point.
      */
-    static get Helper(): {
-        new (strip: Strip, length?: number, xColor?: THREE.ColorRepresentation, yColor?: THREE.ColorRepresentation, zColor?: THREE.ColorRepresentation): {
-            "__#1@#strip": Strip | null;
-            "__#1@#len": number;
-            "__#1@#c0": THREE.Color | null;
-            "__#1@#c1": THREE.Color | null;
-            "__#1@#c2": THREE.Color | null;
-            "__#1@#disposed": boolean;
-            getColors(): null[] | THREE.Color[];
-            setColors(xColor?: THREE.ColorRepresentation | undefined, yColor?: THREE.ColorRepresentation | undefined, zColor?: THREE.ColorRepresentation | undefined): void;
-            getLength(): number;
-            setLength(x: number): void;
-            update(): void;
-            dispose(): void;
-            readonly isDisposed: boolean;
-            type: string;
-            readonly isLineSegments: true;
-            geometry: THREE.BufferGeometry;
-            material: THREE.Material | THREE.Material[];
-            readonly isLine: true;
-            morphTargetInfluences?: number[] | undefined;
-            morphTargetDictionary?: {
-                [key: string]: number;
-            } | undefined;
-            computeLineDistances(): any;
-            raycast(raycaster: THREE.Raycaster, intersects: THREE.Intersection[]): void;
-            updateMorphTargets(): void;
-            id: number;
-            uuid: string;
-            name: string;
-            parent: THREE.Object3D | null;
-            children: THREE.Object3D[];
-            up: THREE.Vector3;
-            readonly position: THREE.Vector3;
-            readonly rotation: THREE.Euler;
-            readonly quaternion: THREE.Quaternion;
-            readonly scale: THREE.Vector3;
-            readonly modelViewMatrix: THREE.Matrix4;
-            readonly normalMatrix: THREE.Matrix3;
-            matrix: THREE.Matrix4;
-            matrixWorld: THREE.Matrix4;
-            matrixAutoUpdate: boolean;
-            matrixWorldNeedsUpdate: boolean;
-            layers: THREE.Layers;
-            visible: boolean;
-            castShadow: boolean;
-            receiveShadow: boolean;
-            frustumCulled: boolean;
-            renderOrder: number;
-            animations: THREE.AnimationClip[];
-            userData: {
-                [key: string]: any;
-            };
-            customDepthMaterial: THREE.Material;
-            customDistanceMaterial: THREE.Material;
-            readonly isObject3D: true;
-            onBeforeRender: (renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, geometry: THREE.BufferGeometry, material: THREE.Material, group: THREE.Group) => void;
-            onAfterRender: (renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, geometry: THREE.BufferGeometry, material: THREE.Material, group: THREE.Group) => void;
-            applyMatrix4(matrix: THREE.Matrix4): void;
-            applyQuaternion(quaternion: THREE.Quaternion): any;
-            setRotationFromAxisAngle(axis: THREE.Vector3, angle: number): void;
-            setRotationFromEuler(euler: THREE.Euler): void;
-            setRotationFromMatrix(m: THREE.Matrix4): void;
-            setRotationFromQuaternion(q: THREE.Quaternion): void;
-            rotateOnAxis(axis: THREE.Vector3, angle: number): any;
-            rotateOnWorldAxis(axis: THREE.Vector3, angle: number): any;
-            rotateX(angle: number): any;
-            rotateY(angle: number): any;
-            rotateZ(angle: number): any;
-            translateOnAxis(axis: THREE.Vector3, distance: number): any;
-            translateX(distance: number): any;
-            translateY(distance: number): any;
-            translateZ(distance: number): any;
-            localToWorld(vector: THREE.Vector3): THREE.Vector3;
-            worldToLocal(vector: THREE.Vector3): THREE.Vector3;
-            lookAt(vector: number | THREE.Vector3, y?: number | undefined, z?: number | undefined): void;
-            add(...object: THREE.Object3D[]): any;
-            remove(...object: THREE.Object3D[]): any;
-            removeFromParent(): any;
-            clear(): any;
-            attach(object: THREE.Object3D): any;
-            getObjectById(id: number): THREE.Object3D | undefined;
-            getObjectByName(name: string): THREE.Object3D | undefined;
-            getObjectByProperty(name: string, value: string): THREE.Object3D | undefined;
-            getWorldPosition(target: THREE.Vector3): THREE.Vector3;
-            getWorldQuaternion(target: THREE.Quaternion): THREE.Quaternion;
-            getWorldScale(target: THREE.Vector3): THREE.Vector3;
-            getWorldDirection(target: THREE.Vector3): THREE.Vector3;
-            traverse(callback: (object: THREE.Object3D) => any): void;
-            traverseVisible(callback: (object: THREE.Object3D) => any): void;
-            traverseAncestors(callback: (object: THREE.Object3D) => any): void;
-            updateMatrix(): void;
-            updateMatrixWorld(force?: boolean | undefined): void;
-            updateWorldMatrix(updateParents: boolean, updateChildren: boolean): void;
-            toJSON(meta?: {
-                geometries: any;
-                materials: any;
-                textures: any;
-                images: any;
-            } | undefined): any;
-            clone(recursive?: boolean | undefined): any;
-            copy(source: any, recursive?: boolean | undefined): any;
-            addEventListener(type: string, listener: (event: THREE.Event) => void): void;
-            hasEventListener(type: string, listener: (event: THREE.Event) => void): boolean;
-            removeEventListener(type: string, listener: (event: THREE.Event) => void): void;
-            dispatchEvent(event: {
-                [attachment: string]: any;
-                type: string;
-            }): void;
-        };
-        DefaultUp: THREE.Vector3;
-        DefaultMatrixAutoUpdate: boolean;
-    };
+    static get Helper(): StripHelperClass;
     /**
      * Generate animation meta tailored for threejs animation system.
      */
-    static get Anim(): {
-        new (strip: Strip, seg: number, dur: number): {
-            "__#3@#strip": Strip | null;
-            "__#3@#seg": number;
-            "__#3@#dur": number;
-            "__#3@#geom": THREE.BufferGeometry | null;
-            "__#3@#clip": THREE.AnimationClip | null;
-            /**
-             * Practical uv fn set.
-             */
-            "__#3@#compute"(): void;
-            readonly strip: Strip | null;
-            readonly geometry: THREE.BufferGeometry | null;
-            readonly clip: THREE.AnimationClip | null;
-            readonly segment: number;
-            readonly duration: number;
-            dispose(): void;
-        };
-    };
+    static get Anim(): AnimClass;
     /**
      * Practical uv fn set.
      */
