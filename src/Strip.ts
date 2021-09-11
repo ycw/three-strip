@@ -1,9 +1,9 @@
 import type * as THREE from 'three'
 import type { Curve, RadiusFn, TiltFn, UvFn, Morph, Frame } from './Ty'
 import * as Err from './Err'
-import { StripHelperGen } from './StripHelperGen'
-import { CrvGen } from './CrvGen'
-import { AnimGen } from './AnimGen'
+import { StripHelperGen, StripHelperClass } from './StripHelperGen'
+import { CurveHelperGen, CurveHelperClass } from './CurveHelperGen'
+import { AnimGen, AnimClass } from './AnimGen'
 
 const RADIUS = 0.5;
 const TILT = 0;
@@ -12,9 +12,9 @@ const UV = null;
 export class Strip {
 
   static #THREE: null | typeof THREE = null;
-  static #Helper: null | ReturnType<typeof StripHelperGen>;
-  static #Crv: null | ReturnType<typeof CrvGen>;
-  static #Anim: null | ReturnType<typeof AnimGen>;
+  static #StripHelper: null | StripHelperClass;
+  static #CurveHelper: null | CurveHelperClass;
+  static #Anim: null | AnimClass;
 
   /**
    * threejs lib
@@ -23,12 +23,12 @@ export class Strip {
   static set THREE(x: null | typeof THREE) {
     Strip.#THREE = x;
     if (x) {
-      Strip.#Helper = StripHelperGen(x);
-      Strip.#Crv = CrvGen(x);
+      Strip.#StripHelper = StripHelperGen(x);
+      Strip.#CurveHelper = CurveHelperGen(x);
       Strip.#Anim = AnimGen(x);
     } else {
-      Strip.#Helper = null;
-      Strip.#Crv = null;
+      Strip.#StripHelper = null;
+      Strip.#CurveHelper = null;
       Strip.#Anim = null;
     }
   }
@@ -37,10 +37,10 @@ export class Strip {
    * A helper showing TBN frames for each sample point. 
    */
   static get Helper() {
-    if (!this.#Helper) {
+    if (!this.#StripHelper) {
       throw new Err.DependencyInjectionError();
     }
-    return this.#Helper;
+    return this.#StripHelper;
   }
 
   /**
@@ -382,7 +382,7 @@ export class Strip {
 
     // base curve
 
-    Strip.#Crv!.prototype.forEachTBN.call(
+    Strip.#CurveHelper!.forEachTBN(
       this.#crv,
       this.#seg,
       (i, I) => i / I,

@@ -4,14 +4,20 @@ import type { Frame } from './Ty'
 type UFn = (i: number, I: number) => number;
 type EachFn = (i: number, I: number, f: Frame, p: THREE.Vector3) => void;
 
-export function CrvGen($: typeof THREE) {
-  return class Crv extends $.Curve<THREE.Vector3> {
+export interface CurveHelperClass {
+  forEachTBN(
+    curve: THREE.Curve<THREE.Vector3>,
+    seg: number,
+    uFn: UFn,
+    eachFn: EachFn
+  ): void;
+}
 
-    constructor() {
-      super();
-    }
+export function CurveHelperGen($: typeof THREE): CurveHelperClass {
+  return class {
 
-    forEachTBN(
+    static forEachTBN(
+      curve: THREE.Curve<THREE.Vector3>,
       seg: number, // seg count in desired rng
       uFn: UFn, // gen desired rng
       eachFn: EachFn, // call on each TBN formed
@@ -33,7 +39,7 @@ export function CrvGen($: typeof THREE) {
 
       // find first tangent
 
-      this.getTangentAt($u, $T0);
+      curve.getTangentAt($u, $T0);
 
       // select an initial normal vector perpendicular to the first tangent vector,
       // and in the direction of the minimum tangent xyz component
@@ -51,7 +57,7 @@ export function CrvGen($: typeof THREE) {
 
       // call
 
-      this.getPointAt($u, $v1);
+      curve.getPointAt($u, $v1);
       eachFn(0, seg, [$T0.clone(), $B0.clone(), $N0.clone()], $v1);
 
       // compute TBN
@@ -62,7 +68,7 @@ export function CrvGen($: typeof THREE) {
 
         // curr TBN
 
-        this.getTangentAt($u, $T);
+        curve.getTangentAt($u, $T);
         $N.copy($N0);
         $B.copy($B0);
 
@@ -80,7 +86,7 @@ export function CrvGen($: typeof THREE) {
 
         // call
 
-        this.getPointAt($u, $v1);
+        curve.getPointAt($u, $v1);
         eachFn(i, seg, [$T.clone(), $B.clone(), $N.clone()], $v1);
 
         // swap

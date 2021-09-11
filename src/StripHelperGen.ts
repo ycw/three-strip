@@ -2,23 +2,70 @@ import type * as THREE from 'three'
 import type { Strip } from './Strip'
 import * as Err from './Err'
 
-//
-// Defaults
-// 
-
 const X_COLOR = '#ff0000';
 const Y_COLOR = '#00ff00';
 const Z_COLOR = '#0000ff';
 
-/**
- * A fn to gen StripHelper class
- */
-export function StripHelperGen($: typeof THREE) {
+export interface StripHelperClass {
+  /**
+   * Construct a strip helper which shows right-handed TBN frames of strip.
+   * @param strip Strip object
+   * @param length Length of axes; default is `1`
+   * @param xColor x-axis color ( for binormal ); default is `'#ff0000'`
+   * @param yColor y-axis color ( for normal ); default is `'#00ff00'`
+   * @param zColor z-axis color ( for tangent ); default is `'#0000ff'`
+   */
+  new(
+    strip: Strip,
+    length?: number,
+    xColor?: THREE.ColorRepresentation,
+    yColor?: THREE.ColorRepresentation,
+    zColor?: THREE.ColorRepresentation
+  ): StripHelper;
+}
+
+interface StripHelper extends THREE.LineSegments {
+  /**
+   * Get colors of each axis.
+   * @returns array of colors ( clone )
+   */
+  getColors(): (null | THREE.Color)[];
 
   /**
-   * A helper to show Rhanded TBNs for given strip.
+   * Set colors for each axis
+   * @param xColor x-axis color
+   * @param yColor y-axis color
+   * @param zColor z-axis color
+   * @returns 
    */
-  return class StripHelper extends $.LineSegments {
+  setColors(
+    xColor?: THREE.ColorRepresentation,
+    yColor?: THREE.ColorRepresentation,
+    zColor?: THREE.ColorRepresentation
+  ): void;
+
+  /**
+   * Get length of axes.
+   * @returns length of axes
+   */
+  getLength(): number;
+
+  /** Set length of axes */
+  setLength(x: number): void;
+
+  /** Update internal geometry to sync with strip. */
+  update(): void;
+
+  /** Dispose internal geometry and material; unref all object refs. */
+  dispose(): void;
+
+  /** Check if helper is disposed. */
+  get isDisposed(): boolean;
+}
+
+export function StripHelperGen($: typeof THREE): StripHelperClass {
+
+  return class extends $.LineSegments {
 
     #strip: null | Strip = null;
     #len: number = NaN;
@@ -27,15 +74,6 @@ export function StripHelperGen($: typeof THREE) {
     #c2: null | THREE.Color = null;
     #disposed = false;
 
-    /**
-     * Construct a strip helper.
-     * 
-     * @param strip Strip object
-     * @param length Length of axes; default is 1
-     * @param xColor x-axis color ( for binormal ); default si '#ff0000'
-     * @param yColor y-axis color ( for normal ); default is '#00ff00'
-     * @param zColor z-axis color ( for tangent ); default is '#0000ff'
-     */
     constructor(
       strip: Strip,
       length: number = 1,
@@ -66,11 +104,6 @@ export function StripHelperGen($: typeof THREE) {
       this.update();
     }
 
-    /**
-    * Get colors of each axis.
-    * 
-    * @returns array of colors 
-    */
     getColors() {
 
       // guard ( helper is disposed ) 
@@ -85,14 +118,6 @@ export function StripHelperGen($: typeof THREE) {
       return [this.#c0.clone(), this.#c1.clone(), this.#c2.clone()];
     }
 
-    /**
-     * Set colors for each axis
-     * 
-     * @param xColor x-axis color
-     * @param yColor y-axis color
-     * @param zColor z-axis color
-     * @returns 
-     */
     setColors(
       xColor?: THREE.ColorRepresentation,
       yColor?: THREE.ColorRepresentation,
@@ -123,28 +148,16 @@ export function StripHelperGen($: typeof THREE) {
       this.update();
     }
 
-    /**
-     * Get length of axes.
-     * 
-     * @returns length of axes
-     */
     getLength() {
       return this.#len;
     }
 
-    /** 
-     * Set length of axes
-     */
     setLength(x: number) {
       if (this.#disposed) return;
       this.#len = x;
       this.update();
     }
 
-
-    /**
-     * Update helper object.
-     */
     update() {
 
       this.geometry.dispose();
@@ -226,9 +239,6 @@ export function StripHelperGen($: typeof THREE) {
       }
     }
 
-    /**
-     * Dispose internal geometry and material 
-     */
     dispose() {
       if (this.#disposed) return;
 
@@ -244,9 +254,6 @@ export function StripHelperGen($: typeof THREE) {
       this.#disposed = true;
     }
 
-    /**
-     * Check if this helper has disposed ( i.e. called `.dispose()` ). 
-     */
     get isDisposed() {
       return this.#disposed;
     }

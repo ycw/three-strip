@@ -2,33 +2,66 @@ import type * as THREE from 'three';
 import { Strip } from "./Strip";
 import * as Err from './Err';
 
-export function AnimGen($: typeof THREE) {
-  return class Anim {
+export interface AnimClass {
+  /**
+   * Contruct animation meta. 
+   * 
+   * @example
+   * ```js
+   * const anim = new Strip.Anim(strip, 10, 1);
+   * const mesh = new THREE.Mesh(anim.geometry);
+   * const mixer = new THREE.AnimationMixer(mesh);
+   * const action = mixer.clipAction(anim.clip);
+   * action.setDuration(7).play();
+   * // Don't forget to update mixer in render loop.
+   * ```
+   * 
+   * @param strip A strip instance acts as a 'rail'.
+   * @param seg Segment count of moveing strip. 
+   * @param dur Animation duration in sec.
+   */
+  new(
+    strip: Strip,
+    seg: number,
+    dur: number
+  ): Anim;
+}
+
+interface Anim {
+  /** The passed strip which is used as a 'rail' */
+  get strip(): null | Strip;
+  
+  /** 
+   * Segment count of moving strip; clamped. 
+   */
+  get segment(): number;
+
+  /** Animation duration */
+  get duration(): number;
+
+  /** A non-indexed geometry */
+  get geometry(): null | THREE.BufferGeometry;
+  
+  /** A AnimationClip */
+  get clip(): null | THREE.AnimationClip;
+
+  /** Dispose geometry; unref all object refs */
+  dispose(): void;
+
+  /** Check if anim is disposed */
+  get isDispose(): boolean;
+}
+
+export function AnimGen($: typeof THREE): AnimClass {
+  return class {
 
     #strip: null | Strip;
     #seg: number;
     #dur: number;
     #geom: null | THREE.BufferGeometry;
     #clip: null | THREE.AnimationClip;
+    #disposed: boolean;
 
-    /**
-     * Contruct a cyclic animation meta. 
-     * 
-     * @example
-     * ```js
-     * const anim = new Strip.Anim(strip, 10, 1) // 10-seg strip; 1s duration
-     * const mesh = new THREE.Mesh(anim.geometry);
-     * const mixer = new THREE.AnimationMixer(mesh);
-     * const action = mixer.clipAction(anim.clip);
-     * action.play();
-     * 
-     * // Don't forget to update mixer in render loop.
-     * ```
-     * 
-     * @param strip A strip instance acts as a 'rail'.
-     * @param seg No. of segments for strip which moves along the 'rail'. 
-     * @param dur Animation duration in sec; can be set via AnimationAction.
-     */
     constructor(
       strip: Strip,
       seg: number,
@@ -44,6 +77,7 @@ export function AnimGen($: typeof THREE) {
       this.#dur = dur;
       this.#geom = null;
       this.#clip = null;
+      this.#disposed = false;
       this.#compute();
     }
 
@@ -161,18 +195,21 @@ export function AnimGen($: typeof THREE) {
     }
 
     dispose() {
+      if (this.#disposed) return;
       this.#strip = null;
       this.#geom?.dispose();
       this.#geom = null;
       this.#clip = null;
       this.#seg = NaN;
       this.#dur = NaN;
+      this.#disposed = true;
+    }
+
+    get isDispose() {
+      return this.#disposed;
     }
   }
 }
-
-
-
 
 /**
  * A fn to pluck 4-vert data from {src} to gen 6-vert data put into {dst};
