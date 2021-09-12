@@ -101,8 +101,12 @@
     pane.addInput(params, 'flip');
     pane.on('change', (e) => {
       switch(e.presetKey) {
-        case 'flip': return e.value && (action.timeScale *= - 1);
-        case 'duration': return action.setDuration(e.value);
+        case 'flip': 
+          action.timeScale *= - 1;
+          break;
+        case 'duration': 
+          action.setDuration(e.value);
+          break;
       }
     });
 
