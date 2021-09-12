@@ -98,7 +98,7 @@
     };
     const pane = new Pane();
     pane.addInput(params, 'duration', { min: 1, max: 60 });
-    const inputFlip = pane.addInput(params, 'flip');
+    pane.addInput(params, 'flip');
     pane.on('change', (e) => {
       switch(e.presetKey) {
         case 'flip': return e.value && (action.timeScale *= - 1);
