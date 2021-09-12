@@ -3,6 +3,8 @@
 Generate strip geometry for three.js. Supports taper, twist, uvgen, morph and
 animation.
 
+
+
 ## Examples
 
 - [basic usage](//ycw.github.io/three-strip/examples/basic)
@@ -10,6 +12,8 @@ animation.
 - [uv](//ycw.github.io/three-strip/examples/uv)
 - [morph](//ycw.github.io/three-strip/examples/morph)
 - [anim](//ycw.github.io/three-strip/examples/anim)
+
+
 
 ## Installation
 
@@ -24,7 +28,11 @@ $ npm i ycw/three-strip
 $ npm i ycw/three-strip#{VERSION_TAG}
 ```
 
+
+
 ## Usage
+
+( see [example - basic](//ycw.github.io/three-strip/examples/basic) )
 
 ```js
 import * as THREE from "path/to/three.js";
@@ -46,7 +54,7 @@ scene.add(mesh);
 scene.add(new Strip.Helper(strip, 0.2)); // helper (axes length = 0.2)
 ```
 
-See [basic example](//ycw.github.io/three-strip/examples/basic).
+
 
 ## Docs
 
@@ -62,13 +70,11 @@ const strip = new Strip(
 );
 
 strip.geometry; // indexed buffer geometry
-strip.frames; // TBN frames
-
-strip.frames[0]; // 1st frame
-strip.frames[0][0]; // 1st frame's Tangent ( Vector3 )
-strip.frames[0][1]; // 1st frame's Binormal ( Vector3 )
-strip.frames[0][2]; // 1st frame's Normal ( Vector3 )
+strip.frames; // array of right handed TBN frames
+strip.getPoints(); // array of sample points ( deepclone )
 ```
+
+
 
 ### Segment
 
@@ -78,6 +84,8 @@ strip.frames[0][2]; // 1st frame's Normal ( Vector3 )
 // ex. 10-segment strip
 const strip = new Strip(curve, 10);
 ```
+
+
 
 ### Radius
 
@@ -95,6 +103,8 @@ new Strip(curve, 10, (i, I) => i / I * 0.5);
 // i/I : in range [0..1] included
 ```
 
+
+
 ### Tilt
 
 `tilt` controls twisting ( around tangent )
@@ -107,6 +117,8 @@ new Strip(curve, 10, 0.5, Math.PI / 2);
 new Strip(curve, 10, 0.5, (i, I) => i / I * Math.PI);
 ```
 
+
+
 ### Uv
 
 `uv` is a uv generator fn. It's required to return array of 4 numbers which
@@ -116,6 +128,7 @@ sample point #`i`.
 ```js
 // ex.
 const uv = (i, I) => [0, i / I, 1, i / I];
+
 // i : sample point index
 // I : sample point total - 1
 ```
@@ -144,9 +157,60 @@ strip.uv = null;
 strip.geometry.hasAttribute("uv"); // -> false
 ```
 
+
+
+
+## Setting Properties
+
+Use setters :
+
+```js
+strip.curve = .. 
+strip.segment = ..
+strip.radius = ..
+strip.tilt = ..
+strip.uv = ..
+```
+
+Use `.setProps()` :
+
+```js
+strip.setProps( 
+   /*curve*/ ..,
+   /*segment*/ ..,
+   /*radius*/ ..,
+   /*tilt*/ ..,
+   /*uv*/ ..
+);
+
+// pass `undefined` to imply 'keep it unchanged' :
+strip.setProps(undefined, 10, strip.radius * 2);
+```
+
+`.setProps()` will compute `.geometry` at most once ( see 
+[example - set props](//ycw.github.io/three-strip/examples/set-props) ) :
+
+```js
+// slower ( will compute .geometry twice )
+strip.radius *= 2;
+strip.tilt += 0.01;
+
+// faster ( will compute .geometry once )
+strip.setProps(
+  /*curve*/ undefined,
+  /*segment*/ undefined,
+  strip.radius * 2,
+  strip.tilt + 0.01,
+  /*uv*/ undefined,
+);
+```
+
+
+
 ### Morph
 
-`.setMorphs()` to set morphs:
+`.setMorphs()` to set morphs ( see 
+[example - morph](//ycw.github.io/three-strip/examples/morph) ) :
 
 ```js
 // set
@@ -160,18 +224,15 @@ strip.setMorphs([
 strip.setMorphs(null);
 ```
 
-( see [example - morph](//ycw.github.io/three-strip/examples/morph) )
+
 
 ### Helper
 
 Construct a helper showing RHanded TBN frames :
 
-( Do not honor morphing )
-
 ```js
 // basic usage
-const helper = new Strip.Helper(strip);
-scene.add(helper);
+scene.add(new Strip.Helper(strip));
 
 // ctor params
 new Strip.Helper(
@@ -197,11 +258,13 @@ helper.getLength();
 // set axes length
 helper.setLength(0.5);
 
-// update helper if strip properties changed
-// ex.
+// update helper if strip properties changed : 
 strip.tilt += Math.PI / 4;
 helper.update();
+
+// `Helper` does not honor morphing.
 ```
+
 
 
 ### Anim
@@ -228,7 +291,8 @@ const mesh = new THREE.Mesh(anim.geometry);
 const mixer = new THREE.AnimationMixer(mesh);
 const action = mixer.clipAction(anim.clip);
 action.setLoop(THREE.LoopPingPong, 2).play();
-// remember to update `mixer` in render loop.
+
+// Remember to update `mixer` in render loop.
 ```
 
 Properties :
@@ -243,69 +307,24 @@ anim.clip; // a AnimationClip used by AnimationAction
 // They're all getters.
 ```
 
-## Setting Properties
-
-Use setters :
-
-```js
-strip.curve = .. 
-strip.segment = ..
-strip.radius = ..
-strip.tilt = ..
-strip.uv = ..
-```
-
-Use `.setProps()` :
-
-```js
-strip.setProps( 
-   /*curve*/ ..,
-   /*segment*/ ..,
-   /*radius*/ ..,
-   /*tilt*/ ..,
-   /*uv*/ ..
-);
-
-// pass `undefined` to imply 'keep it unchanged'
-// ex.
-strip.setProps(undefined, 10, strip.radius * 2, 0);
-```
-
-`.setProps()` computes `.geometry` at most once :
-
-( see [example - set props](//ycw.github.io/three-strip/examples/set-props) )
-
-```js
-// slower ( will compute .geometry twice )
-strip.radius *= 2;
-strip.tilt += 0.01;
-
-// faster ( will compute .geometry once )
-strip.setProps(
-  /*curve*/ undefined,
-  /*segment*/ undefined,
-  strip.radius * 2,
-  strip.tilt + 0.01,
-  /*uv*/ undefined,
-);
-```
-
 
 
 ## Proper Disposal
+
+( see [example - dispose](//ycw.github.io/three-strip/examples/dispose) )
 
 ```js
 strip.dispose() // dispose a Strip{}
 helper.dispose() // dispose a Helper{}
 anim.dispose() // dispose a Anim{}
 
-// Disposing a helper(/anim) will unref `.strip` only.
+// Disposing a helper(/anim) will unref `.strip` only :
 const helper = new Strip.Helper(strip);
 helper.dispose();
 helper.strip // -> null
 strip.isDisposed  // -> false
-````
-( see [example - dispose](//ycw.github.io/three-strip/examples/dispose) )
+```
+
 
 ## Build
 
