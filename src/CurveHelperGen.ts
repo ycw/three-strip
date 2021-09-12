@@ -6,7 +6,7 @@ type EachFn = (i: number, I: number, f: Frame, p: THREE.Vector3) => void;
 
 export interface CurveHelperClass {
   forEachTBN(
-    curve: THREE.Curve<THREE.Vector3>,
+    curve: THREE.Curve<THREE.Vector3> | THREE.CurvePath<THREE.Vector3>,
     seg: number,
     uFn: UFn,
     eachFn: EachFn
@@ -17,7 +17,7 @@ export function CurveHelperGen($: typeof THREE): CurveHelperClass {
   return class {
 
     static forEachTBN(
-      curve: THREE.Curve<THREE.Vector3>,
+      curve: THREE.Curve<THREE.Vector3> | THREE.CurvePath<THREE.Vector3>,
       seg: number, // seg count in desired rng
       uFn: UFn, // gen desired rng
       eachFn: EachFn, // call on each TBN formed
@@ -57,8 +57,7 @@ export function CurveHelperGen($: typeof THREE): CurveHelperClass {
 
       // call
 
-      curve.getPointAt($u, $v1);
-      eachFn(0, seg, [$T0.clone(), $B0.clone(), $N0.clone()], $v1);
+      eachFn(0, seg, [$T0.clone(), $B0.clone(), $N0.clone()], curve.getPointAt($u));
 
       // compute TBN
 
@@ -85,9 +84,8 @@ export function CurveHelperGen($: typeof THREE): CurveHelperClass {
         $B.crossVectors($T, $N);
 
         // call
-
-        curve.getPointAt($u, $v1);
-        eachFn(i, seg, [$T.clone(), $B.clone(), $N.clone()], $v1);
+ 
+        eachFn(i, seg, [$T.clone(), $B.clone(), $N.clone()], curve.getPointAt($u));
 
         // swap
 
