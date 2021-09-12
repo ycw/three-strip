@@ -30,7 +30,7 @@ export interface AnimClass {
 interface Anim {
   /** The passed strip which is used as a 'rail' */
   get strip(): null | Strip;
-  
+
   /** 
    * Segment count of moving strip; clamped. 
    */
@@ -41,7 +41,7 @@ interface Anim {
 
   /** A non-indexed geometry */
   get geometry(): null | THREE.BufferGeometry;
-  
+
   /** A AnimationClip */
   get clip(): null | THREE.AnimationClip;
 
@@ -104,7 +104,7 @@ export function AnimGen($: typeof THREE): AnimClass {
 
       for (let i = 0, I = strip.segment; i <= I; ++i) {
 
-        // find parts; split if strip exceeds tail
+        // find part(s) ( split if strip exceeds tail )
 
         const start = i; // seg idx
         const end = i + seg;
@@ -118,26 +118,26 @@ export function AnimGen($: typeof THREE): AnimClass {
         const aNo = new $.Float32BufferAttribute($nF32_3, 3);
 
         for (const [start, end, offset] of parts) {
-          cp_f32(3, start, end, $po, aPo.array as Float32Array, offset);
-          cp_f32(3, start, end, $no, aNo.array as Float32Array, offset);
+          cp_f32_3comp(start, end, $po, aPo.array as Float32Array, offset);
+          cp_f32_3comp(start, end, $no, aNo.array as Float32Array, offset);
         }
 
         $maPo.push(aPo);
         $maNo.push(aNo);
 
-        // keyframe tracks
+        // keyframe tracks 
 
-        const times: number[] = [];
-        const values: number[] = [];
+        const J = strip.segment;
+        const ts = new Float32Array(J + 1); // .times
+        const vs = new Float32Array(J + 1); // .values
 
-        for (let j = 0, J = strip.segment; j <= J; ++j) {
-          times.push(j / J * this.#dur);
-          values.push(+(i === j));
+        for (let j = 0; j <= J; ++j) {
+          ts[j] = j / J * this.#dur;
+          vs[j] = +(i === j);
         }
 
         $trks.push(new $.KeyframeTrack(
-          `.morphTargetInfluences[${i}]`,
-          times, values, $.InterpolateDiscrete
+          `.morphTargetInfluences[${i}]`, ts, vs, $.InterpolateDiscrete
         ));
       }
 
@@ -149,23 +149,29 @@ export function AnimGen($: typeof THREE): AnimClass {
       $geom.setAttribute('position', $maPo[0].clone());
       $geom.setAttribute('normal', $maNo[0].clone());
 
-      // set attrib uv ( remap )
+      // set attrib uv ( remap frm 'rail'-space to 'moving strip'-space )
 
       if (strip.uv) {
-        const uvs = [];
-        for (let i = 0, I = seg; i <= I; ++i) {
-          uvs.push(strip.uv(i, I));
-        }
+
         const aUv = new $.Float32BufferAttribute(6 * 2 * seg, 2);
-        for (let i = 0; i < seg; ++i) {
-          const v0 = uvs[i].slice(0, 2);
-          const v1 = uvs[i].slice(2, 4);
-          const v2 = uvs[i + 1].slice(0, 2);
-          const v3 = uvs[i + 1].slice(2, 4);
+
+        const I = seg;
+        for (let i = 0, uvA = strip.uv(0, I), uvB; i < I; ++i) {
+
+          // next sample point uvs
+          uvB = strip.uv(i + 1, I);
+
+          // (uvB.0, uvB.1) 2---3 (uvB.2, uvB.3)
+          //                |\  |
+          //                |  \|
+          // (uvA.0, uvA.1) 0---1 (uvA.2, uvA.3)
           aUv.set([
-            ...v0, ...v1, ...v2,
-            ...v2, ...v1, ...v3
+            uvA[0], uvA[1], uvA[2], uvA[3], uvB[0], uvB[1], // tri 0,1,2
+            uvB[0], uvB[1], uvA[2], uvA[3], uvB[2], uvB[3] // tri 2,1,3
           ], 12 * i);
+
+          // swap
+          uvA = uvB;
         }
         $geom.setAttribute('uv', aUv);
       }
@@ -212,36 +218,35 @@ export function AnimGen($: typeof THREE): AnimClass {
 }
 
 /**
- * A fn to pluck 4-vert data from {src} to gen 6-vert data put into {dst};
- * repeat for each seg in range from {startSeg} to {endSeg} (excluded).
+ * Pluck four 3tuples from {src}; put six 3tuples into {dst}
+ * Repeat for each seg in range from {startSeg} to {endSeg} (excluded)
  * 
- * @param comp n component; 3 for pos/normal; 2 for uv
  * @param startSeg start seg index 
  * @param endSeg end seg index
  * @param src pluck data from 
  * @param dst write data into 
  * @param dstOffsetSeg dst offset in segment 
  */
-function cp_f32(
-  comp: number, // n component; 3 for pos/normal, 2 for uv
+
+function cp_f32_3comp(
   startSeg: number, endSeg: number,
   src: Float32Array, dst: Float32Array, dstOffsetSeg: number
 ) {
-  for (let i = 0; i < endSeg - startSeg; ++i) {
-
-    // pluck 4-vert (4handles) data in seq from {src}
-
-    const startF32 = 2 * comp * (startSeg + i);
-    const v0 = src.slice(startF32, startF32 + comp);
-    const v1 = src.slice(startF32 + comp, startF32 + comp * 2);
-    const v2 = src.slice(startF32 + comp * 2, startF32 + comp * 3);
-    const v3 = src.slice(startF32 + comp * 3, startF32 + comp * 4);
-
-    // gen 6-vert (2tris) data; put into {dst}
-
+  for (let i = 0, at = -1; i < endSeg - startSeg; ++i) {
+    at = 6 * (startSeg + i); // {src} idx ( 6=2*3comp )
+    
+    // pluck (x,y,z)s from {src}, put into {dst}
+    // 2---3
+    // |\  |   ^^^^
+    // |  \|   flow
+    // 0---1   ^^^^
     dst.set([
-      ...v0, ...v1, ...v2,
-      ...v2, ...v1, ...v3
-    ], (6 * comp) * (i + dstOffsetSeg));
+      src[at], src[at + 1], src[at + 2],       // v0 (x,y,z) 
+      src[at + 3], src[at + 4], src[at + 5],   // v1 (x,y,z)
+      src[at + 6], src[at + 7], src[at + 8],   // v2 (x,y,z)
+      src[at + 6], src[at + 7], src[at + 8],   // v2 (x,y,z)
+      src[at + 3], src[at + 4], src[at + 5],   // v1 (x,y,z)
+      src[at + 9], src[at + 10], src[at + 11], // v3 (x,y,z)
+    ], 18 * (i + dstOffsetSeg));
   }
 }
