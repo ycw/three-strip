@@ -66,12 +66,12 @@ export function StripHelperGen($: typeof THREE): StripHelperClass {
 
   return class extends $.LineSegments {
 
-    #strip: null | Strip = null;
-    #len: number = NaN;
-    #c0: null | THREE.Color = null;
-    #c1: null | THREE.Color = null;
-    #c2: null | THREE.Color = null;
-    #disposed = false;
+    #strip: null | Strip;
+    #len: number;
+    #c0: null | THREE.Color;
+    #c1: null | THREE.Color;
+    #c2: null | THREE.Color;
+    #disposed: boolean;
 
     constructor(
       strip: Strip,
@@ -195,25 +195,11 @@ export function StripHelperGen($: typeof THREE): StripHelperClass {
       const $v1 = new $.Vector3();
       const $v2 = new $.Vector3();
       const $v3 = new $.Vector3();
-      const $aPo = this.#strip.geometry.attributes.position;
+      const $pts = this.#strip.getPoints()!;
 
-      for (let i = 0, $i = -1; i < $I; ++i) {
+      for (let i = 0; i < $I; ++i) {
 
-        // find pos ( mid of 2 handles )
-
-        $v0.set(
-          $aPo.getX($i = i * 2),
-          $aPo.getY($i),
-          $aPo.getZ($i)
-        );
-
-        $v1.set(
-          $aPo.getX(++$i),
-          $aPo.getY($i),
-          $aPo.getZ($i)
-        );
-
-        $v3.addVectors($v0, $v1).multiplyScalar(.5); // =sample point, p
+        $v3.copy($pts[i]);
 
         $v0.copy($frms[i][1]).multiplyScalar(this.#len).add($v3); // B for x
         $v1.copy($frms[i][2]).multiplyScalar(this.#len).add($v3); // N for y
