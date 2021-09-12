@@ -69,11 +69,14 @@ export class Strip {
   #tilt: number | TiltFn = TILT;
   #uv: null | UvFn;
   #mrps: null | Morph[];
+  #disposed: boolean;
+
   #geom: null | THREE.BufferGeometry;
   #frms: null | Frame[];
+  #pts: null | THREE.Vector3[]; // sample points positions
+
   #rFn: null | RadiusFn = () => RADIUS;
   #tiltFn: null | TiltFn = () => TILT;
-  #disposed = false;
 
   /**
    * Construct a Strip.
@@ -100,9 +103,10 @@ export class Strip {
     this.#setTilt(tilt);
     this.#uv = uv;
     this.#mrps = null;
-    this.#geom = null;
-    this.#frms = null;
     this.#geom = new Strip.#THREE.BufferGeometry();
+    this.#frms = null;
+    this.#pts = null;
+    this.#disposed = false;
     this.#update();
   }
 
@@ -237,6 +241,15 @@ export class Strip {
   }
 
   /**
+   * Get sample points.
+   * 
+   * @returns array of points ( deepclone )
+   */
+  getPoints() {
+    return this.#pts && this.#pts.map(p => p.clone());
+  }
+
+  /**
    * Set morphs.
    * 
    * A morph is in form of `{ curve, radius=0.5, tilt=0 }`.
@@ -263,13 +276,33 @@ export class Strip {
     this.#update();
   }
 
+  /**
+   * Set properties in one go. Pass `undefined` means that 'keep it unchanged'.
+   * 
+   * @examples
+   * ```js
+   * strip.setProp(
+   *   undefined, // `curve` unchanged
+   *   undefined, // `segment` unchanged
+   *   strip.radius * 2, // double radius
+   *   0, // zero the tilt
+   *   null // delete attrib uv
+   * )
+   * ```
+   * 
+   * @param crv new curve object ( accept null )
+   * @param seg new segment count
+   * @param r new radius ( accept fn )
+   * @param tilt new tilt ( accept fn )
+   * @param uv new uv fn ( accept null )
+   */
   setProps(
     crv: null | Curve = this.#crv,
     seg: number = this.#seg,
     r: number | RadiusFn = this.#r,
     tilt: number | TiltFn = this.#tilt,
     uv: null | UvFn = this.#uv
-  ) {
+  ): void {
     if (this.#disposed) return;
 
     const shouldUpd =
@@ -304,6 +337,7 @@ export class Strip {
     this.#geom?.dispose();
     this.#geom = null;
     this.#frms = null;
+    this.#pts = null;
     this.#disposed = true;
   }
 
@@ -366,11 +400,17 @@ export class Strip {
       return;
     }
 
-    // Rhand TBN
+    // Rhand TBN ( re init )
 
     this.#frms ??= [];
     this.#frms.length = this.#seg;
-    const frms = this.#frms;
+    const $frms = this.#frms;
+
+    // Sample points ( re init )
+
+    this.#pts ??= [];
+    this.#pts.length = this.#seg;
+    const $pts = this.#pts;
 
     // cache
 
@@ -392,16 +432,20 @@ export class Strip {
 
         $r = this.#rFn!(i, I);
         $tilt = this.#tiltFn!(i, I);
-        frms[i] ??= [$v0, $v0, $v0] // stubs ( pass tsc )
-        frms[i][0] = T;
-        frms[i][1] = $tilt ? N.applyAxisAngle(T, $tilt) : N;
-        frms[i][2] = $tilt ? B.applyAxisAngle(T, $tilt) : B;
-        $v0.copy(frms[i][1]).multiplyScalar($r).add(P);
-        $v1.copy(frms[i][1]).multiplyScalar(-$r).add(P);
+        $frms[i] ??= [$v0, $v0, $v0] // stubs ( pass tsc )
+        $frms[i][0] = T;
+        $frms[i][1] = $tilt ? N.applyAxisAngle(T, $tilt) : N;
+        $frms[i][2] = $tilt ? B.applyAxisAngle(T, $tilt) : B;
+        $v0.copy($frms[i][1]).multiplyScalar($r).add(P);
+        $v1.copy($frms[i][1]).multiplyScalar(-$r).add(P);
         (aPo.array as Float32Array).set([
           $v0.x, $v0.y, $v0.z,
           $v1.x, $v1.y, $v1.z
         ], i * 6);
+
+        // put sample point
+
+        $pts[i] = P;
 
         // index data
 
@@ -432,7 +476,7 @@ export class Strip {
     // normals
 
     if (this.#seg === 1) {
-      $v0.addVectors(frms[0][2], frms[1][2]).divideScalar(2);
+      $v0.addVectors($frms[0][2], $frms[1][2]).divideScalar(2);
       (aNo.array as Float32Array).set([
         $v0.x, $v0.y, $v0.z,
         $v0.x, $v0.y, $v0.z,
@@ -440,15 +484,15 @@ export class Strip {
         $v0.x, $v0.y, $v0.z,
       ]);
     } else { // #seg > 1
-      for (const [i, frm] of frms.entries()) {
-        if (i === 0 || i === frms.length - 1) {
+      for (const [i, frm] of $frms.entries()) {
+        if (i === 0 || i === $frms.length - 1) {
           (aNo.array as Float32Array).set([
             frm[2].x, frm[2].y, frm[2].z,
             frm[2].x, frm[2].y, frm[2].z
           ], i * 6);
         } else {
-          $v0.addVectors(frms[i - 1][2], frm[2])
-            .add(frms[i + 1][2])
+          $v0.addVectors($frms[i - 1][2], frm[2])
+            .add($frms[i + 1][2])
             .divideScalar(3);
           (aNo.array as Float32Array).set([
             $v0.x, $v0.y, $v0.z,
