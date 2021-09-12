@@ -14,12 +14,13 @@
       cursor: grab;
     }
 
-    .panel {
+    output {
       position: fixed;
       top: 0;
       left: 0;
       z-index: 1;
       padding: 1rem;
+      white-space: pre;
     }
   </style>
   <script type='module' defer>
@@ -53,20 +54,30 @@
     const curve = new Curves.GrannyKnot();
     const tilt = (i, I) => i / I * Math.PI / 180 * -210 + Math.PI;
     const strip = new Strip(curve, 500, 4, tilt, Strip.UvFns[0]);
-    const anim = new Strip.Anim(strip, 20, 10);
 
     const group = new THREE.Group();
     group.scale.setScalar(0.1);
     scene.add(group);
 
     { // track ( for debug )
-      const mat = new THREE.MeshLambertMaterial({ 
-        color: '#000', transparent: true, opacity: 0.1, wireframe: true });
+      const mat = new THREE.MeshLambertMaterial({
+        color: '#000', transparent: true, opacity: 0.1, wireframe: true
+      });
       const mesh = new THREE.Mesh(strip.geometry, mat);
       group.add(mesh);
     }
 
-    // strip 
+    // anim
+
+    performance.mark('a-start');
+    const anim = new Strip.Anim(strip, 20, 10);
+    performance.mark('a-end');
+    performance.measure('anim', 'a-start', 'a-end');
+    const entry = performance.getEntriesByName('anim', 'measure')[0];
+    document.querySelector('output').textContent =
+      `Build ${anim.segment}seg Anim; used ${entry.duration | 0}ms`;
+
+    // moving strip 
 
     const tex = new THREE.TextureLoader().load('../img/a.jpg');
     const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, map: tex })
@@ -80,11 +91,18 @@
     action.play();
 
     // tweak pane
-    
-    const params = { duration: anim.duration };
+
+    const params = {
+      duration: anim.duration,
+      flip: false,
+    };
     const pane = new Pane();
     pane.addInput(params, 'duration', { min: 1, max: 60 });
-    pane.on('change', () => action.setDuration(params.duration));
+    const inputFlip = pane.addInput(params, 'flip');
+    pane.on('change', (e) => {
+      action.setDuration(params.duration);
+      e.presetKey === 'flip' && e.value !== e.last && (action.timeScale *= -1);
+    });
 
     // raycaster
 
@@ -101,34 +119,17 @@
 
     const clock = new THREE.Clock();
     const intersects = [];
-    const el = document.querySelector('output');
-    let isHitAndThenMovedAway = false; 
 
     renderer.setAnimationLoop(() => {
       renderer.render(scene, camera);
       controls.update();
-
-      // update mixer
-
+      //// upate `mixer`
       mixer.update(clock.getDelta());
-
-      // inspect intersections
-
+      //// pause `action` if hit
       raycaster.setFromCamera(pointer, camera);
       intersects.length = 0;
       raycaster.intersectObject(mesh, false, intersects);
-
-      const isHit = intersects[0]?.object === mesh;
-      el.textContent = isHit;
-      action.paused = isHit;
-      if (isHit) {
-        if (isHitAndThenMovedAway) {
-          action.timeScale *= -1; // flip
-          isHitAndThenMovedAway = false;
-        }
-      } else {
-        isHitAndThenMovedAway = true;
-      }
+      action.paused = (intersects[0]?.object === mesh);
     });
 
     // ----
@@ -149,7 +150,5 @@
 </head>
 
 <body>
-  <div class='panel'>
-    Is pointer hit strip ? <output></output>
-  </div>
+  <output></output>
 </body>
