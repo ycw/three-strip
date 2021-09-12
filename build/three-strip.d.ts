@@ -186,6 +186,12 @@ declare class Strip {
      */
     get frames(): Frame[] | null;
     /**
+     * Get sample points.
+     *
+     * @returns array of points ( deepclone )
+     */
+    getPoints(): THREE.Vector3[] | null;
+    /**
      * Set morphs.
      *
      * A morph is in form of `{ curve, radius=0.5, tilt=0 }`.
@@ -205,6 +211,26 @@ declare class Strip {
      * @param mrps Array of morphs
      */
     setMorphs(mrps: null | Morph[]): void;
+    /**
+     * Set properties in one go. Pass `undefined` means that 'keep it unchanged'.
+     *
+     * @examples
+     * ```js
+     * strip.setProp(
+     *   undefined, // `curve` unchanged
+     *   undefined, // `segment` unchanged
+     *   strip.radius * 2, // double radius
+     *   0, // zero the tilt
+     *   null // delete attrib uv
+     * )
+     * ```
+     *
+     * @param crv new curve object ( accept null )
+     * @param seg new segment count
+     * @param r new radius ( accept fn )
+     * @param tilt new tilt ( accept fn )
+     * @param uv new uv fn ( accept null )
+     */
     setProps(crv?: null | Curve, seg?: number, r?: number | RadiusFn, tilt?: number | TiltFn, uv?: null | UvFn): void;
     /**
      * Dispose geometry and unref all object refs
