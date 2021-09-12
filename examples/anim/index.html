@@ -100,8 +100,10 @@
     pane.addInput(params, 'duration', { min: 1, max: 60 });
     const inputFlip = pane.addInput(params, 'flip');
     pane.on('change', (e) => {
-      action.setDuration(params.duration);
-      e.presetKey === 'flip' && e.value !== e.last && (action.timeScale *= -1);
+      switch(e.presetKey) {
+        case 'flip': return e.value && (action.timeScale *= - 1);
+        case 'duration': return action.setDuration(e.value);
+      }
     });
 
     // raycaster
