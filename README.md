@@ -300,6 +300,7 @@ helper.dispose() // dispose a Helper{}
 anim.dispose() // dispose a Anim{}
 
 // Disposing a helper(/anim) will unref `.strip` only.
+const helper = new Strip.Helper(strip);
 helper.dispose();
 helper.strip // -> null
 strip.isDisposed  // -> false
