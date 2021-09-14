@@ -3,7 +3,7 @@ import { terser } from 'rollup-plugin-terser';
 import dts from 'rollup-plugin-dts';
 
 export default [{
-  input: 'src/three-strip.ts',
+  input: 'src/index.ts',
   output: {
     format: 'es',
     file: 'build/three-strip.js',
