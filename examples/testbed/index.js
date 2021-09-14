@@ -42,7 +42,7 @@ const curve = new THREE.LineCurve3(
 // ----
 
 const { geom, strip } = make();
-const map = new THREE.TextureLoader().load('../img/a.org.jpg');
+const map = new THREE.TextureLoader().load('../img/a.jpg');
 const mat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map });
 const mesh = new THREE.Mesh(geom, mat);
 scene.add(mesh);
