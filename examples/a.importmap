@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "three": "//cdn.skypack.dev/three@0.132",
+    "three/": "//cdn.skypack.dev/three@0.132/"
+  }
+}
