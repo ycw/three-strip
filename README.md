@@ -33,7 +33,7 @@ const geom = new StripGeometry(strip, segments);
 const mesh = new THREE.Mesh(geom, mat);
 scene.add(mesh);
 
-scene.add(new StripHelper(strip, segments)); // helper
+scene.add(new StripHelper(strip, segments));
 ```
 
 ## Docs
@@ -41,6 +41,8 @@ scene.add(new StripHelper(strip, segments)); // helper
 `Strip`
 
 ```js
+Strip.UvPresets; // UvFn[] (static)
+
 strip = new Strip(curve, radius, tilt);
 strip.computeFrames(nSegments); // [B,N,T,O][] (rhanded)
 ```
