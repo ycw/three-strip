@@ -8,6 +8,7 @@ declare type UvFn = (i: number, I: number) => [
     number,
     number
 ];
+declare type Curve = THREE.Curve<THREE.Vector3> | THREE.CurvePath<THREE.Vector3>;
 declare type Frame = [
     THREE.Vector3,
     THREE.Vector3,
@@ -15,7 +16,6 @@ declare type Frame = [
     THREE.Vector3
 ];
 
-declare type Curve = THREE.Curve<THREE.Vector3> | THREE.CurvePath<THREE.Vector3>;
 declare class Strip {
     curve: Curve;
     radius: number | RadiusFn;
@@ -28,10 +28,7 @@ declare class Strip {
 declare type Segments = number | [number] | [number, number] | [number, number, number];
 declare class StripGeometry extends THREE.BufferGeometry {
     #private;
-    strip: Strip;
-    segments: Segments;
-    uvFn?: UvFn | undefined;
-    constructor(strip: Strip, segments: Segments, uvFn?: UvFn | undefined);
+    constructor(strip: Strip, segments: Segments, uvFn?: UvFn);
 }
 
 declare class StripHelper extends THREE.LineSegments {
