@@ -27,8 +27,6 @@ export class StripGeometry extends THREE.BufferGeometry {
     );
   }
 
-
-
   #compute(
     strip: Strip,
     segs: number,
