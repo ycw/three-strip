@@ -63,7 +63,7 @@ function make() {
   const strip = new Strip(
     curve,
     (i, I) => 1 - i / I * params.taper,
-    (i, I) => i / I * params.twist
+    (i, I) => i / I * params.twist + Math.PI / 2
   );
   const geom = new StripGeometry(
     strip,
