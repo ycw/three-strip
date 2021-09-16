@@ -1,10 +1,5 @@
 import * as THREE from "three";
-import { RadiusFn, TiltFn, UvFn, Frame } from "./Type";
-
-type Curve =
-  | THREE.Curve<THREE.Vector3>
-  | THREE.CurvePath<THREE.Vector3>
-  ;
+import { Curve, RadiusFn, TiltFn, UvFn, Frame } from "./Type";
 
 export class Strip {
 
