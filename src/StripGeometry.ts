@@ -12,24 +12,29 @@ type Segments =
 export class StripGeometry extends THREE.BufferGeometry {
 
   constructor(
-    public strip: Strip,
-    public segments: Segments,
-    public uvFn?: UvFn
+    strip: Strip,
+    segments: Segments,
+    uvFn?: UvFn
   ) {
     super();
     !Array.isArray(segments) && (segments = [segments]);
     this.#compute(
+      strip,
       segments[0],
       segments[1] ?? segments[0],
       segments[2] ?? 0,
+      uvFn
     );
   }
 
 
+
   #compute(
+    strip: Strip,
     segs: number,
     subsegs: number,
-    offset: number
+    offset: number,
+    uvFn?: UvFn
   ) {
 
     segs = Math.max(1, segs | 0);
@@ -43,15 +48,15 @@ export class StripGeometry extends THREE.BufferGeometry {
         : [[offset, segs, 0], [0, end - segs, segs - offset + 1]];
     })();
 
-    const frames = this.strip.computeFrames(segs);
+    const frames = strip.computeFrames(segs);
     const edges = subsegs + parts.length;
     const ps = new Float32Array(6 * edges);
-    const uvs = this.uvFn ? new Float32Array(4 * edges) : null;
+    const uvs = uvFn ? new Float32Array(4 * edges) : null;
     const idxs: number[] = [];
 
-    const rFn = this.strip.radius instanceof Function
-      ? this.strip.radius
-      : () => this.strip.radius as number;
+    const rFn = strip.radius instanceof Function
+      ? strip.radius
+      : () => strip.radius as number;
 
     const $v0 = new THREE.Vector3();
     const $v1 = new THREE.Vector3();
@@ -76,10 +81,10 @@ export class StripGeometry extends THREE.BufferGeometry {
         );
 
         // uv
-        (this.uvFn && uvs) && uvs.set(
+        (uvFn && uvs) && uvs.set(
           offset
-            ? this.uvFn(i + offset, subsegs + 1)
-            : this.uvFn(i, subsegs),
+            ? uvFn(i + offset, subsegs + 1)
+            : uvFn(i, subsegs),
           4 * (i + offset)
         );
       }
