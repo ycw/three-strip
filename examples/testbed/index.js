@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Strip, StripGeometry, StripHelper } from '../../build/three-strip.js'
+import { Strip, StripGeometry, StripHelper, UvPreset } from '../../build/three-strip.js'
 import { Pane } from '//cdn.skypack.dev/tweakpane@3.0.5?min'
 
 const renderer = new THREE.WebGLRenderer();
@@ -20,14 +20,14 @@ scene.add(new THREE.GridHelper());
 // ----
 
 const uvFns = {
-  0: Strip.UvPresets.strip[0],
-  1: Strip.UvPresets.strip[1],
-  2: Strip.UvPresets.strip[2],
-  3: Strip.UvPresets.strip[3],
-  4: Strip.UvPresets.dash[0],
-  5: Strip.UvPresets.dash[1],
-  6: Strip.UvPresets.dash[2],
-  7: Strip.UvPresets.dash[3],
+  0: UvPreset.strip[0],
+  1: UvPreset.strip[1],
+  2: UvPreset.strip[2],
+  3: UvPreset.strip[3],
+  4: UvPreset.dash[0],
+  5: UvPreset.dash[1],
+  6: UvPreset.dash[2],
+  7: UvPreset.dash[3],
 };
 
 const params = {
@@ -35,7 +35,7 @@ const params = {
   taper: 0,
   nSeg: 50,
   useDash: true,
-  dashArray: '1,2,3',
+  dashArray: '5,1,2',
   dashOffset: 0,
   uvFnsIdx: 0,
 };
@@ -99,14 +99,14 @@ pane.addInput(params, 'taper', { min: 0, max: 1 });
 pane.addInput(params, 'uvFnsIdx', {
   title: 'uvFn',
   options: {
-    'UvPresets.strip[0]': 0,
-    'UvPresets.strip[1]': 1,
-    'UvPresets.strip[2]': 2,
-    'UvPresets.strip[3]': 3,
-    'UvPresets.dash[0]': 4,
-    'UvPresets.dash[1]': 5,
-    'UvPresets.dash[2]': 6,
-    'UvPresets.dash[3]': 7,
+    'UvPreset.strip[0]': 0,
+    'UvPreset.strip[1]': 1,
+    'UvPreset.strip[2]': 2,
+    'UvPreset.strip[3]': 3,
+    'UvPreset.dash[0]': 4,
+    'UvPreset.dash[1]': 5,
+    'UvPreset.dash[2]': 6,
+    'UvPreset.dash[3]': 7,
   }
 });
 pane.addInput(params, 'nSeg', { min: 1, max: 100, step: 10 });
