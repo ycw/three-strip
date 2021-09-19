@@ -1,14 +1,37 @@
 import * as THREE from "three";
 import { Curve, RadiusFn, TiltFn, UvFn, Frame } from "./Type";
 
+function uvFnGen(
+  x: number,
+  mode: 0 | 1 | 2 | 3
+): ReturnType<UvFn> {
+  switch (mode) {
+    case 0: return [0, x, 1, x];
+    case 1: return [x, 1, x, 0];
+    case 2: return [1, x, 0, x];
+    case 3: return [x, 0, x, 1];
+  }
+}
+
 export class Strip {
 
-  static UvPresets: [UvFn, UvFn, UvFn, UvFn] = [
-    (i, I) => [0, i / I, 1, i / I],
-    (i, I) => [i / I, 1, i / I, 0],
-    (i, I) => [1, 1 - i / I, 0, 1 - i / I],
-    (i, I) => [1 - i / I, 0, 1 - i / I, 1]
-  ];
+  static UvPresets: {
+    dash: [UvFn, UvFn, UvFn, UvFn],
+    strip: [UvFn, UvFn, UvFn, UvFn]
+  } = ({
+    dash: [
+      (i, I) => uvFnGen(i / I, 0),
+      (i, I) => uvFnGen(i / I, 1),
+      (i, I) => uvFnGen(i / I, 2),
+      (i, I) => uvFnGen(i / I, 3),
+    ],
+    strip: [
+      (_i, _I, j, J) => uvFnGen(j / J, 0),
+      (_i, _I, j, J) => uvFnGen(j / J, 1),
+      (_i, _I, j, J) => uvFnGen(j / J, 2),
+      (_i, _I, j, J) => uvFnGen(j / J, 3),
+    ]
+  });
 
   constructor(
     public curve: Curve,
