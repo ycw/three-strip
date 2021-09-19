@@ -19,7 +19,7 @@ export default [{
     }),
   ]
 }, {
-  input: 'typings/three-strip.d.ts',
+  input: 'typings/index.d.ts',
   output: [
     { file: 'build/three-strip.d.ts', format: 'es' }
   ],
