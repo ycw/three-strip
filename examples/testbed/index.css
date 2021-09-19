@@ -6,3 +6,7 @@ canvas {
   height: 100vh;
   cursor: grab;
 }
+
+body {
+  overflow: hidden;
+}
