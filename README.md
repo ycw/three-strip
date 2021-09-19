@@ -1,6 +1,7 @@
 # About three-strip
 
-Generate strip geometry for three.js. Supports taper, twist and uvgen.
+Generate strip geometry for three.js. Supports taper, twist, dasharray and
+uvgen.
 
 [Testbed](//ycw.github.io/three-strip/examples/testbed)
 
@@ -28,7 +29,7 @@ const radius = (i, I) => 1 - i / I; // taper
 const tilt = (i, I) => i / I * Math.PI; // twist
 const strip = new Strip(curve, radius, tilt);
 
-const segments = 100; 
+const segments = 100;
 const geom = new StripGeometry(strip, segments);
 const mesh = new THREE.Mesh(geom, mat);
 scene.add(mesh);
@@ -40,23 +41,79 @@ scene.add(new StripHelper(strip, segments));
 
 `Strip`
 
-```js
-Strip.UvPresets; // UvFn[] (static)
-
-strip = new Strip(curve, radius, tilt);
-strip.computeFrames(nSegments); // [B,N,T,O][] (rhanded)
+```ts
+new (curve, radius?, tilt?);
+// curve: 3d curve or curvepath
+// radius: half breadth
+// tilt: twist angle (in radian) around tangent
 ```
 
+- `.curve`
+- `.radius`
+- `.tilt`
+- `.computeFrames(nSeg)` : Get r-handed coords frames.
+
+
+
+---
 `StripGeometry` ( extends `BufferGeometry` )
 
-```js
-new StripGeometry(strip, nSegments, uvFn);
-new StripGeometry(strip, [nSegments, nSubsegments, offset], uvFn);
+```ts
+new (strip, nSeg, uvFn?);
+new (strip, [nSeg, dashArray?, dashOffset?], uvFn?);
+// nSeg: segment count ( +ve int )
+// dashArray: dash-gap list ( +ve ints )
+// dashOffset: dash offset ( int )
+// uvFn: uvgen fn ( see UvPreset )
 ```
 
+Ex. dashed strip
+
+```ts
+new StripGeometry(strip, [10, [1, 2, 3]]);
+// since dashArray has odd number of values, it's repeated
+// to yield even number of values, i.e. [1,2,3,1,2,3]
+```
+
+
+
+---
 `StripHelper` ( extends `LineSegments` )
 
-```js
-helper = new StripHelper(strip, nSegments, length, xColor, yColor, zColor);
+```ts
+new (strip, segments, size?, xColor?, yColor?, zColor?);
+```
+
+- `.strip`
+- `.segments` : segment count
+- `.size` : axes length
+- `.xColor` : x-axis color
+- `.yColor` : y-axis color
+- `.zColor` : z-axis color
+- `.update()` : update helper
+
+Ex. update helper props
+
+```ts
+const helper = new StripHelper(strip, 10);
+helper.xColor.setClassName("purple");
+helper.segments *= 2;
 helper.update();
+```
+
+
+
+---
+`UvPreset`
+
+```ts
+UvPreset.dash; // arr of dash-space uv fns.
+UvPreset.strip; // arr of strip-space uv fns.
+```
+
+Ex.
+
+```ts
+new StripGeometry(strip, 100, UvPreset.dash[0]);
+new StripGeometry(strip, 100, UvPreset.strip[0]);
 ```
