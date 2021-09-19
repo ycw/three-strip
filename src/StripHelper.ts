@@ -10,7 +10,7 @@ export class StripHelper extends THREE.LineSegments {
   constructor(
     public strip: Strip,
     public segments: number,
-    public length = 1,
+    public size = 1,
     xColor: THREE.ColorRepresentation = 0xff0000,
     yColor: THREE.ColorRepresentation = 0x00ff00,
     zColor: THREE.ColorRepresentation = 0x0000ff
@@ -28,7 +28,7 @@ export class StripHelper extends THREE.LineSegments {
 
   update() {
     const segments = Math.max(1, this.segments | 0);
-    const length = Math.max(0, this.length);
+    const size = Math.max(0, this.size);
     const frames = this.strip.computeFrames(segments);
     const ps = new Float32Array(18 * frames.length);
     const cs = new Float32Array(18 * frames.length);
@@ -38,9 +38,9 @@ export class StripHelper extends THREE.LineSegments {
 
     for (const [i, [B, N, T, O]] of frames.entries()) {
       // pos
-      B.multiplyScalar(length).add(O);
-      N.multiplyScalar(length).add(O);
-      T.multiplyScalar(length).add(O);
+      B.multiplyScalar(size).add(O);
+      N.multiplyScalar(size).add(O);
+      T.multiplyScalar(size).add(O);
       ps.set([
         O.x, O.y, O.z, B.x, B.y, B.z,
         O.x, O.y, O.z, N.x, N.y, N.z,
