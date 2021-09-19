@@ -1,12 +1,16 @@
 import type * as THREE from "three";
 
-export type RadiusFn = (i: number, I: number) => number;
+export type RadiusFn = (
+  i: number, I: number
+) => number;
 
-export type TiltFn = (i: number, I: number) => number;
+export type TiltFn = (
+  i: number, I: number
+) => number;
 
 export type UvFn = (
-  i: number, I: number, // dash-space
-  j: number, J: number, // strip-space
+  i: number, I: number,
+  j: number, J: number,
 ) => ([
   number, number, // u0, v0 
   number, number // u1, v1
