@@ -2,8 +2,7 @@ import * as THREE from 'three';
 
 declare type RadiusFn = (i: number, I: number) => number;
 declare type TiltFn = (i: number, I: number) => number;
-declare type UvFn = (i: number, I: number, // dash-space
-j: number, J: number) => ([
+declare type UvFn = (i: number, I: number, j: number, J: number) => ([
     number,
     number,
     number,
@@ -48,4 +47,9 @@ declare class StripHelper extends THREE.LineSegments {
     update(): void;
 }
 
-export { Strip, StripGeometry, StripHelper };
+declare class UvPreset {
+    static dash: [UvFn, UvFn, UvFn, UvFn];
+    static strip: [UvFn, UvFn, UvFn, UvFn];
+}
+
+export { Strip, StripGeometry, StripHelper, UvPreset };
