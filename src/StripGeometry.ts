@@ -1,21 +1,9 @@
 import * as THREE from "three";
 import { Strip } from "./Strip";
-import { UvFn } from "./Type";
-
-type Segments =
-  | [number]
-  | [number, number[]]
-  | [number, number[], number]
-  ;
-
-type ParsedSegments = [
-  number,
-  number[],
-  number
-];
+import { UvFn, Segments, ParsedSegments } from "./Type";
 
 export class StripGeometry extends THREE.BufferGeometry {
-
+  
   constructor(
     strip: Strip,
     segments: number | Segments,
@@ -25,12 +13,39 @@ export class StripGeometry extends THREE.BufferGeometry {
     this.#compute(strip, StripGeometry.parseSegments(segments), uvFn);
   }
 
+  static parseSegments(
+    segments: number | Segments
+  ) {
+    const s = [] as unknown as ParsedSegments;
+    if (Array.isArray(segments)) {
+      s[0] = segments[0];
+      s[1] = (segments[1] === undefined) ? [segments[0]] : segments[1];
+      s[2] = segments[2] || 0;
+    } else {
+      s[0] = segments;
+      s[1] = [segments];
+      s[2] = 0;
+    }
+
+    // segment count
+    s[0] = Math.max(1, s[0] | 0);
+
+    // dash array
+    s[1] = s[1].filter(x => x >= 1).map(x => x | 0);
+    s[1].length || (s[1] = [s[0]]);
+    s[1].length % 2 && s[1].push(...s[1]);
+
+    // dash offset
+    s[2] |= 0;
+
+    return s;
+  }
+
   #compute(
     strip: Strip,
     [nStripSeg, dashArr, dashOff]: ParsedSegments,
     uvFn?: UvFn,
   ) {
-
     const indices: number[] = [];
     const ps: number[] = [];
     const uvs: number[] = [];
@@ -90,33 +105,5 @@ export class StripGeometry extends THREE.BufferGeometry {
     uvFn && (this.attributes.uv = new THREE.Float32BufferAttribute(uvs, 2));
     this.setIndex(indices);
     this.computeVertexNormals();
-  }
-
-  static parseSegments(
-    segments: number | Segments
-  ) {
-    const s = [] as unknown as ParsedSegments;
-    if (Array.isArray(segments)) {
-      s[0] = segments[0];
-      s[1] = (segments[1] === undefined) ? [segments[0]] : segments[1];
-      s[2] = segments[2] || 0;
-    } else {
-      s[0] = segments;
-      s[1] = [segments];
-      s[2] = 0;
-    }
-
-    // segment count
-    s[0] = Math.max(1, s[0] | 0);
-
-    // dash array
-    s[1] = s[1].filter(x => x >= 1).map(x => x | 0);
-    s[1].length || (s[1] = [s[0]]);
-    s[1].length % 2 && s[1].push(...s[1]);
-
-    // dash offset
-    s[2] |= 0;
-
-    return s;
   }
 }
