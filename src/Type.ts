@@ -4,10 +4,13 @@ export type RadiusFn = (i: number, I: number) => number;
 
 export type TiltFn = (i: number, I: number) => number;
 
-export type UvFn = (i: number, I: number) => [
+export type UvFn = (
+  i: number, I: number, // dash-space
+  j: number, J: number, // strip-space
+) => ([
   number, number, // u0, v0 
   number, number // u1, v1
-];
+]);
 
 export type Curve =
   | THREE.Curve<THREE.Vector3>
