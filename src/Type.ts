@@ -21,3 +21,15 @@ export type Frame = [
   THREE.Vector3, THREE.Vector3, THREE.Vector3, // B, N, T
   THREE.Vector3 // Origin
 ];
+
+export type Segments =
+  | [number]
+  | [number, number[]]
+  | [number, number[], number]
+  ;
+
+export type ParsedSegments = [
+  number,
+  number[],
+  number
+];
