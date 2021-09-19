@@ -3,94 +3,120 @@ import { Strip } from "./Strip";
 import { UvFn } from "./Type";
 
 type Segments =
-  | number
   | [number]
-  | [number, number]
-  | [number, number, number]
+  | [number, number[]]
+  | [number, number[], number]
   ;
+
+type ParsedSegments = [
+  number,
+  number[],
+  number
+];
 
 export class StripGeometry extends THREE.BufferGeometry {
 
   constructor(
     strip: Strip,
-    segments: Segments,
-    uvFn?: UvFn
+    segments: number | Segments,
+    uvFn?: UvFn,
   ) {
     super();
-    !Array.isArray(segments) && (segments = [segments]);
-    this.#compute(
-      strip,
-      segments[0],
-      segments[1] ?? segments[0],
-      segments[2] ?? 0,
-      uvFn
-    );
+    this.#compute(strip, StripGeometry.parseSegments(segments), uvFn);
   }
 
   #compute(
     strip: Strip,
-    segs: number,
-    subsegs: number,
-    offset: number,
-    uvFn?: UvFn
+    [nStripSeg, dashArr, dashOff]: ParsedSegments,
+    uvFn?: UvFn,
   ) {
 
-    segs = Math.max(1, segs | 0);
-    subsegs = Math.max(1, Math.min(segs, subsegs | 0));
-    offset = (offset | 0) % segs + +(offset < 0) * segs; // support -ve
+    const indices: number[] = [];
+    const ps: number[] = [];
+    const uvs: number[] = [];
 
-    const parts = (() => {
-      const end = offset + subsegs;
-      return (end <= segs)
-        ? [[offset, end, 0]]
-        : [[offset, segs, 0], [0, end - segs, segs - offset + 1]];
-    })();
+    const lut_isDash = dashArr.flatMap((x, i) => Array(x).fill(1 - i % 2));
+    const lut_dashIdx = dashArr.flatMap((x) => Array.from(Array(x).keys()));
+    const lut_nDashSeg = dashArr.flatMap((x) => Array(x).fill(x));
 
-    const frames = strip.computeFrames(segs);
-    const edges = subsegs + parts.length;
-    const ps = new Float32Array(6 * edges);
-    const uvs = uvFn ? new Float32Array(4 * edges) : null;
-    const idxs: number[] = [];
-
+    const frms = strip.computeFrames(nStripSeg);
     const rFn = strip.radius instanceof Function
       ? strip.radius
-      : () => strip.radius as number;
-
+      : () => strip.radius as number
+      ;
     const $v0 = new THREE.Vector3();
     const $v1 = new THREE.Vector3();
+    const lutLen = lut_isDash.length;
+    for (let i = 0, $i, $lutIdx, $nDashSeg, $nVert = 0; i < nStripSeg;) {
+      // lut idx
+      $i = (dashOff + i) % lutLen;
+      $lutIdx = ($i < 0) ? lutLen + $i : $i;
 
-    for (const [start, end, offset] of parts) {
-      const subframes = frames.slice(start, end + 1);
-      for (const [i, [B, , , O]] of subframes.entries()) {
-        // pos
-        const r = rFn(start + i, segs);
-        $v0.copy(B).multiplyScalar(r).add(O);
-        $v1.copy(B).multiplyScalar(-r).add(O);
-        ps.set([
-          $v0.x, $v0.y, $v0.z,
-          $v1.x, $v1.y, $v1.z
-        ], 6 * (i + offset));
+      // subseg count
+      $i = lut_nDashSeg[$lutIdx] - lut_dashIdx[$lutIdx];
+      $nDashSeg = (i + $i > nStripSeg) ? nStripSeg - i : $i;
 
-        // idx
-        const j = 2 * (i + offset);
-        (i < subframes.length - 1) && idxs.push(
-          j, j + 1, j + 2,
-          j + 2, j + 1, j + 3
-        );
+      // is dash
+      if (lut_isDash[$lutIdx]) {
+        for (let j = 0, $B, $P, $r, $v; j <= $nDashSeg; ++j) {
+          // pos
+          [$B, , , $P] = frms[i + j];
+          $r = rFn(i + j, nStripSeg);
+          $v0.copy($B).multiplyScalar($r).add($P);
+          $v1.copy($B).multiplyScalar(-$r).add($P);
+          ps.push($v0.x, $v0.y, $v0.z, $v1.x, $v1.y, $v1.z);
 
-        // uv
-        (uvFn && uvs) && uvs.set(
-          offset
-            ? uvFn(i + offset, subsegs + 1)
-            : uvFn(i, subsegs),
-          4 * (i + offset)
-        );
+          // uv
+          uvFn && uvs.push(...uvFn(
+            j < $nDashSeg
+              ? lut_dashIdx[$lutIdx + j]
+              : lut_dashIdx[$lutIdx + j - 1] + 1
+            , lut_nDashSeg[$lutIdx],
+            i + j, nStripSeg
+          ));
+
+          // idx
+          (j < $nDashSeg) && indices.push(
+            ($v = 2 * j + $nVert), $v + 1, $v + 2,
+            $v + 2, $v + 1, $v + 3
+          );
+        }
+        $nVert += 2 * ($nDashSeg + 1);
       }
+      i += $nDashSeg;
     }
 
-    this.attributes.position = new THREE.BufferAttribute(ps, 3);
-    uvs && (this.attributes.uv = new THREE.BufferAttribute(uvs, 2));
-    this.setIndex(idxs);
+    this.attributes.position = new THREE.Float32BufferAttribute(ps, 3);
+    uvFn && (this.attributes.uv = new THREE.Float32BufferAttribute(uvs, 2));
+    this.setIndex(indices);
     this.computeVertexNormals();
+  }
+
+  static parseSegments(
+    segments: number | Segments
+  ) {
+    const s = [] as unknown as ParsedSegments;
+    if (Array.isArray(segments)) {
+      s[0] = segments[0];
+      s[1] = (segments[1] === undefined) ? [segments[0]] : segments[1];
+      s[2] = segments[2] || 0;
+    } else {
+      s[0] = segments;
+      s[1] = [segments];
+      s[2] = 0;
+    }
+
+    // segment count
+    s[0] = Math.max(1, s[0] | 0);
+
+    // dash array
+    s[1] = s[1].filter(x => x >= 1).map(x => x | 0);
+    s[1].length || (s[1] = [s[0]]);
+    s[1].length % 2 && s[1].push(...s[1]);
+
+    // dash offset
+    s[2] |= 0;
+
+    return s;
   }
 }
