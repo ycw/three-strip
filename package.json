@@ -5,6 +5,8 @@
   "repository": "github:ycw/three-strip",
   "description": "Generate strip geometry for three.js",
   "license": "MIT",
+  "type": "module",
+  "main": "build/three-strip.js",
   "module": "build/three-strip.js",
   "typings": "build/three-strip.d.ts",
   "devDependencies": {
