@@ -114,6 +114,6 @@ UvPreset.strip; // arr of strip-space uv fns.
 Ex.
 
 ```ts
-new StripGeometry(strip, 100, UvPreset.dash[0]);
+new StripGeometry(strip, [100, [1, 2]], UvPreset.dash[0]);
 new StripGeometry(strip, 100, UvPreset.strip[0]);
 ```
