@@ -16,13 +16,13 @@ export class UvPreset {
   static dash: [UvFn, UvFn, UvFn, UvFn] = [
     (i, I) => uvFnGen(i / I, 0),
     (i, I) => uvFnGen(i / I, 1),
-    (i, I) => uvFnGen(i / I, 2),
-    (i, I) => uvFnGen(i / I, 3),
+    (i, I) => uvFnGen(1 - i / I, 2),
+    (i, I) => uvFnGen(1 - i / I, 3),
   ];
   static strip: [UvFn, UvFn, UvFn, UvFn] = [
     (_i, _I, j, J) => uvFnGen(j / J, 0),
     (_i, _I, j, J) => uvFnGen(j / J, 1),
-    (_i, _I, j, J) => uvFnGen(j / J, 2),
-    (_i, _I, j, J) => uvFnGen(j / J, 3),
+    (_i, _I, j, J) => uvFnGen(1 - j / J, 2),
+    (_i, _I, j, J) => uvFnGen(1 - j / J, 3),
   ];
 }
